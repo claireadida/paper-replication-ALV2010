@@ -1,0 +1,1337 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}/Users/claireadida/Desktop/France Documents/March 2009/Analysis/Experiments/CV/AnalysisDec2009.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}15 Oct 2010, 11:16:02
+{txt}
+{com}. 
+. ****************************************
+. * Do-file for Analysis of CV Experiment
+. ****************************************
+. 
+. clear
+{txt}
+{com}. set mem 1g
+{txt}(1048576k)
+
+{com}. use "/Users/claireadida/Desktop/France Documents/March 2009/Analysis/Experiments/CV/OriginalData.dta"
+{txt}
+{com}. 
+. gen MuslimPair=1 if pair=="Paire_Khadija-Aurélie"
+{txt}(139 missing values generated)
+
+{com}. replace MuslimPair=0 if MuslimPair==.
+{txt}(139 real changes made)
+
+{com}. 
+. gen ChristianPair=1 if pair=="Paire_Marie-Aurélie"
+{txt}(136 missing values generated)
+
+{com}. replace ChristianPair=0 if ChristianPair==.
+{txt}(136 real changes made)
+
+{com}. 
+. gen Secretary=1 if position=="01_Secrétaire"
+{txt}(228 missing values generated)
+
+{com}. replace Secretary=0 if Secretary==.
+{txt}(228 real changes made)
+
+{com}. 
+. gen AssistantDirector=1 if position=="02_Assistante de direction"
+{txt}(203 missing values generated)
+
+{com}. replace AssistantDirector=0 if AssistantDirector==.
+{txt}(203 real changes made)
+
+{com}. 
+. gen AssistantAccountant=1 if position=="03_Aide comptable"
+{txt}(196 missing values generated)
+
+{com}. replace AssistantAccountant=0 if AssistantAccountant==.
+{txt}(196 real changes made)
+
+{com}. 
+. gen Accountant=1 if position=="04_Comptable"
+{txt}(198 missing values generated)
+
+{com}. replace Accountant=0 if Accountant==.
+{txt}(198 real changes made)
+
+{com}. 
+. gen CDD=1 if contract_type=="CDD"
+{txt}(133 missing values generated)
+
+{com}. replace CDD=0 if CDD==.
+{txt}(133 real changes made)
+
+{com}. 
+. gen CDI=1 if contract_type=="CDI"
+{txt}(142 missing values generated)
+
+{com}. replace CDI=0 if CDI==.
+{txt}(142 real changes made)
+
+{com}. 
+. gen SmallFirm=1 if firm_size=="01_< 50 salariés"
+{txt}(90 missing values generated)
+
+{com}. replace SmallFirm=0 if SmallFirm==.
+{txt}(90 real changes made)
+
+{com}. replace SmallFirm=. if firm_size==""
+{txt}(6 real changes made, 6 to missing)
+
+{com}. 
+. gen MediumFirm=1 if firm_size=="02_50-249 salariés"
+{txt}(214 missing values generated)
+
+{com}. replace MediumFirm=0 if MediumFirm==.
+{txt}(214 real changes made)
+
+{com}. replace MediumFirm=. if firm_size==""
+{txt}(6 real changes made, 6 to missing)
+
+{com}. 
+. gen LargeFirm=1 if firm_size=="03_>= 250 salariés"
+{txt}(252 missing values generated)
+
+{com}. replace LargeFirm=0 if LargeFirm==.
+{txt}(252 real changes made)
+
+{com}. replace LargeFirm=. if firm_size==""
+{txt}(6 real changes made, 6 to missing)
+
+{com}. 
+. 
+. /* Due to some errors in the original coding of the "result" variable, we merge a "newresult" variable with
+> the following values:
+> missing value if test was not valid due to an email address error
+> NRNR if both candidates got no response
+> NRNo if cand1 got no response and cand2 got an explicit no
+> NRYes if cand1 got no response and cand2 got an explicit yes
+> NoNR if cand1 got an explicit no and cand2 got no response
+> NoNo if both candidates got an explicit no
+> NoYes if cand1 got an explicit no and cand2 got an explicit yes
+> YesNR if cand1 got an explicit yes and cand2 got no response
+> YesNo if cand1 got an explicit yes and cand2 got an explicit no
+> YesYes if both candidates got an explicit yes */
+. 
+. joinby testnumber using "/Users/claireadida/Desktop/France Documents/March 2009/Analysis/Experiments/CV/NewAdidaCoding.dta", _merge(newresultvariableadded)
+{txt}
+{com}. 
+. /* There are different ways to interpret and code the data. We do the analysis with all possible codings
+> First, we follow the ISM-Corum interpretation, which is that cases with 2 explicit NO's and cases with 
+> 2 NON-ANSWER's (or a mix of the two) are NOT USABLE. According to them, when there are two explicit NO's, it may mean that the 2 CV's
+> were inadequate for the job. When there are 2 non-answers, it may be that the employer has not even considered
+> the CV's: in both cases, these are not real tests. The only usable tests are cases with two explicit YES, and
+> cases with one explicit YES. Note that this version treats as the same result the following two cases:
+> 1 explicit yes and 1 non-response; 1 explicit yes and 1 explicit no. Note that in all cases the control candidate
+> is candidate 2 and the test candidate is candidate 1 */
+. 
+. codebook newresult
+
+{txt}{hline}
+{res}newresult{right:(unlabeled)}
+{txt}{hline}
+
+{col 19}type:  string ({res}str9{txt}), but longest is str6
+
+{col 10}unique values:  {res}9{col 51}{txt}missing "":  {res}4{txt}/{res}275
+
+{txt}{col 13}tabulation:  Freq.  Value
+{col 24}{res}      4{col 33}""
+{col 24}    142{col 33}"NRNR"
+{col 24}      5{col 33}"NRNo"
+{col 24}     41{col 33}"NRYes"
+{col 24}      3{col 33}"NoNR"
+{col 24}     37{col 33}"NoNo"
+{col 24}      3{col 33}"NoYes"
+{col 24}     11{col 33}"YesNR"
+{col 24}      3{col 33}"YesNo"
+{col 24}     26{col 33}"YesYes"
+{txt}
+{com}. 
+. gen ControlWins=1 if newresult=="NRYes" | newresult=="NoYes" | newresult=="YesYes"
+{txt}(205 missing values generated)
+
+{com}. replace ControlWins=0 if ControlWins==.
+{txt}(205 real changes made)
+
+{com}. replace ControlWins=. if newresult=="" | newresult=="NRNR" | newresult=="NRNo" | newresult=="NoNR" | newresult=="NoNo"
+{txt}(191 real changes made, 191 to missing)
+
+{com}. 
+. gen TestWins=1 if newresult=="YesNR" | newresult=="YesNo" | newresult=="YesYes"
+{txt}(235 missing values generated)
+
+{com}. replace TestWins=0 if TestWins==.
+{txt}(235 real changes made)
+
+{com}. replace TestWins=. if newresult=="" | newresult=="NRNR" | newresult=="NRNo" | newresult=="NoNR" | newresult=="NoNo"
+{txt}(191 real changes made, 191 to missing)
+
+{com}. 
+. summarize TestWins ControlWins
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 4}TestWins {c |}{res}        84    .4761905    .5024324          0          1
+{txt}{space 1}ControlWins {c |}{res}        84    .8333333    .3749163          0          1
+{txt}
+{com}. summarize TestWins ControlWins if MuslimPair==1
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 4}TestWins {c |}{res}        35    .3142857    .4710082          0          1
+{txt}{space 1}ControlWins {c |}{res}        35    .9428571    .2355041          0          1
+{txt}
+{com}. summarize TestWins ControlWins if ChristianPair==1
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 4}TestWins {c |}{res}        49    .5918367     .496587          0          1
+{txt}{space 1}ControlWins {c |}{res}        49     .755102     .434483          0          1
+{txt}
+{com}. 
+. ttest TestWins, by(MuslimPair) unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+   Group{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+       0 {c |}{res}{col 12}     49{col 22} .5918367{col 34}  .070941{col 46}  .496587{col 58} .4492003{col 70} .7344732
+       {txt}1 {c |}{res}{col 12}     35{col 22} .3142857{col 34} .0796149{col 46} .4710082{col 58} .1524887{col 70} .4760827
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}     84{col 22} .4761905{col 34} .0548199{col 46} .5024324{col 58}  .367156{col 70}  .585225
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22}  .277551{col 34} .1066356{col 58} .0651516{col 70} .4899504
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}0{txt}) - mean({res}1{txt})                                      t = {res}  2.6028
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 75.6456
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.9944         {txt}Pr(|T| > |t|) = {res}0.0111          {txt}Pr(T > t) = {res}0.0056
+{txt}
+{com}. ttest ControlWins, by(MuslimPair) unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+   Group{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+       0 {c |}{res}{col 12}     49{col 22}  .755102{col 34}  .062069{col 46}  .434483{col 58} .6303039{col 70} .8799001
+       {txt}1 {c |}{res}{col 12}     35{col 22} .9428571{col 34} .0398075{col 46} .2355041{col 58} .8619587{col 70} 1.023756
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}     84{col 22} .8333333{col 34} .0409067{col 46} .3749163{col 58} .7519715{col 70} .9146952
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22}-.1877551{col 34} .0737373{col 58}-.3345796{col 70}-.0409306
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}0{txt}) - mean({res}1{txt})                                      t = {res} -2.5463
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 77.1745
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.0064         {txt}Pr(|T| > |t|) = {res}0.0129          {txt}Pr(T > t) = {res}0.9936
+{txt}
+{com}. ttest TestWins==ControlWins if ChristianPair==1, unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+Variable{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+TestWins {c |}{res}{col 12}     49{col 22} .5918367{col 34}  .070941{col 46}  .496587{col 58} .4492003{col 70} .7344732
+{txt}Contro~s {c |}{res}{col 12}     49{col 22}  .755102{col 34}  .062069{col 46}  .434483{col 58} .6303039{col 70} .8799001
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}     98{col 22} .6734694{col 34}  .047614{col 46} .4713549{col 58} .5789687{col 70} .7679701
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22}-.1632653{col 34} .0942613{col 58}-.3504146{col 70}  .023884
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}TestWins{txt}) - mean({res}ControlWins{txt})                     t = {res} -1.7321
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res}  94.336
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.0433         {txt}Pr(|T| > |t|) = {res}0.0865          {txt}Pr(T > t) = {res}0.9567
+{txt}
+{com}. ttest TestWins==ControlWins if MuslimPair==1, unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+Variable{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+TestWins {c |}{res}{col 12}     35{col 22} .3142857{col 34} .0796149{col 46} .4710082{col 58} .1524887{col 70} .4760827
+{txt}Contro~s {c |}{res}{col 12}     35{col 22} .9428571{col 34} .0398075{col 46} .2355041{col 58} .8619587{col 70} 1.023756
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}     70{col 22} .6285714{col 34} .0581688{col 46} .4866755{col 58} .5125278{col 70} .7446151
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22}-.6285714{col 34} .0890122{col 58}-.8073577{col 70}-.4497852
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}TestWins{txt}) - mean({res}ControlWins{txt})                     t = {res} -7.0616
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res}      50
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.0000         {txt}Pr(|T| > |t|) = {res}0.0000          {txt}Pr(T > t) = {res}1.0000
+{txt}
+{com}. 
+. logit ControlWins MuslimPair CDD SmallFirm MediumFirm, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-37.477652}  
+Iteration 1:{space 3}log pseudolikelihood = {res: -33.24966}  
+Iteration 2:{space 3}log pseudolikelihood = {res: -32.77107}  
+Iteration 3:{space 3}log pseudolikelihood = {res: -32.76721}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-32.767209}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}4{txt}){col 67}= {res}      9.23
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0556
+{txt}Log pseudolikelihood = {res}-32.767209{txt}{col 51}Pseudo R2{col 67}= {res}    0.1257
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1} ControlWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}  1.84164{col 26}{space 2} .7703185{col 37}{space 1}    2.39{col 46}{space 3}0.017{col 54}{space 4} .3318432{col 67}{space 3} 3.351436
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.7429979{col 26}{space 2} .6903557{col 37}{space 1}   -1.08{col 46}{space 3}0.282{col 54}{space 4} -2.09607{col 67}{space 3} .6100744
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .4421357{col 26}{space 2} 1.051483{col 37}{space 1}    0.42{col 46}{space 3}0.674{col 54}{space 4}-1.618734{col 67}{space 3} 2.503005
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.393673{col 26}{space 2}  1.19204{col 37}{space 1}    1.17{col 46}{space 3}0.242{col 54}{space 4}-.9426833{col 67}{space 3} 3.730029
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .8661071{col 26}{space 2} 1.154453{col 37}{space 1}    0.75{col 46}{space 3}0.453{col 54}{space 4} -1.39658{col 67}{space 3} 3.128794
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit ControlWins MuslimPair CDD SmallFirm MediumFirm test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-37.477652}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-33.245768}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-32.766071}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-32.762196}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-32.762195}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}5{txt}){col 67}= {res}      9.21
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.1010
+{txt}Log pseudolikelihood = {res}-32.762195{txt}{col 51}Pseudo R2{col 67}= {res}    0.1258
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1} ControlWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} 1.844506{col 26}{space 2} .7608617{col 37}{space 1}    2.42{col 46}{space 3}0.015{col 54}{space 4} .3532448{col 67}{space 3} 3.335768
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.7560771{col 26}{space 2}  .739564{col 37}{space 1}   -1.02{col 46}{space 3}0.307{col 54}{space 4}-2.205596{col 67}{space 3} .6934418
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .4136887{col 26}{space 2} 1.134752{col 37}{space 1}    0.36{col 46}{space 3}0.715{col 54}{space 4}-1.810385{col 67}{space 3} 2.637762
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2}  1.38097{col 26}{space 2} 1.169934{col 37}{space 1}    1.18{col 46}{space 3}0.238{col 54}{space 4}-.9120573{col 67}{space 3} 3.673998
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} .0792538{col 26}{space 2}  .886077{col 37}{space 1}    0.09{col 46}{space 3}0.929{col 54}{space 4}-1.657425{col 67}{space 3} 1.815933
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .8789066{col 26}{space 2} 1.185875{col 37}{space 1}    0.74{col 46}{space 3}0.459{col 54}{space 4}-1.445365{col 67}{space 3} 3.203178
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins MuslimPair CDD SmallFirm MediumFirm, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-56.740469}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-49.606668}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-49.595497}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-49.595491}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-49.595491}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}4{txt}){col 67}= {res}     12.48
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0141
+{txt}Log pseudolikelihood = {res}-49.595491{txt}{col 51}Pseudo R2{col 67}= {res}    0.1259
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}    TestWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.399743{col 26}{space 2} .5451198{col 37}{space 1}   -2.57{col 46}{space 3}0.010{col 54}{space 4}-2.468158{col 67}{space 3}-.3313274
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} 1.092515{col 26}{space 2} .5491022{col 37}{space 1}    1.99{col 46}{space 3}0.047{col 54}{space 4}  .016295{col 67}{space 3} 2.168736
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.9634581{col 26}{space 2} .9961243{col 37}{space 1}   -0.97{col 46}{space 3}0.333{col 54}{space 4}-2.915826{col 67}{space 3} .9889096
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2}-.4685779{col 26}{space 2} 1.062787{col 37}{space 1}   -0.44{col 46}{space 3}0.659{col 54}{space 4}-2.551601{col 67}{space 3} 1.614446
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .6648736{col 26}{space 2} 1.025474{col 37}{space 1}    0.65{col 46}{space 3}0.517{col 54}{space 4}-1.345019{col 67}{space 3} 2.674766
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins MuslimPair CDD SmallFirm MediumFirm test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-56.740469}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-49.346647}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-49.334638}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-49.334631}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-49.334631}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}5{txt}){col 67}= {res}     12.97
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0236
+{txt}Log pseudolikelihood = {res}-49.334631{txt}{col 51}Pseudo R2{col 67}= {res}    0.1305
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}    TestWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.429698{col 26}{space 2} .5463782{col 37}{space 1}   -2.62{col 46}{space 3}0.009{col 54}{space 4}-2.500579{col 67}{space 3}-.3588159
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} 1.156913{col 26}{space 2} .5504687{col 37}{space 1}    2.10{col 46}{space 3}0.036{col 54}{space 4} .0780139{col 67}{space 3} 2.235811
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.8175865{col 26}{space 2} 1.008803{col 37}{space 1}   -0.81{col 46}{space 3}0.418{col 54}{space 4}-2.794805{col 67}{space 3} 1.159632
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2}-.3697376{col 26}{space 2} 1.077121{col 37}{space 1}   -0.34{col 46}{space 3}0.731{col 54}{space 4}-2.480856{col 67}{space 3} 1.741381
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.4332492{col 26}{space 2} .6047051{col 37}{space 1}   -0.72{col 46}{space 3}0.474{col 54}{space 4}-1.618449{col 67}{space 3} .7519511
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .6102601{col 26}{space 2} 1.023952{col 37}{space 1}    0.60{col 46}{space 3}0.551{col 54}{space 4} -1.39665{col 67}{space 3}  2.61717
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. logit ControlWins MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-37.477652}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-30.405134}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-29.374452}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-29.354439}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-29.354436}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}7{txt}){col 67}= {res}     14.82
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0384
+{txt}Log pseudolikelihood = {res}-29.354436{txt}{col 51}Pseudo R2{col 67}= {res}    0.2167
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1} ControlWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} 1.896411{col 26}{space 2} .8346927{col 37}{space 1}    2.27{col 46}{space 3}0.023{col 54}{space 4} .2604438{col 67}{space 3} 3.532379
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.4540811{col 26}{space 2} .7193204{col 37}{space 1}   -0.63{col 46}{space 3}0.528{col 54}{space 4}-1.863923{col 67}{space 3} .9557609
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} 1.792604{col 26}{space 2} 1.692734{col 37}{space 1}    1.06{col 46}{space 3}0.290{col 54}{space 4}-1.525094{col 67}{space 3} 5.110301
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 2.449876{col 26}{space 2} 1.657784{col 37}{space 1}    1.48{col 46}{space 3}0.139{col 54}{space 4}-.7993208{col 67}{space 3} 5.699072
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2} .6940978{col 26}{space 2} 2.100149{col 37}{space 1}    0.33{col 46}{space 3}0.741{col 54}{space 4}-3.422119{col 67}{space 3} 4.810315
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-1.523788{col 26}{space 2} .9951809{col 37}{space 1}   -1.53{col 46}{space 3}0.126{col 54}{space 4}-3.474307{col 67}{space 3} .4267309
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-1.828223{col 26}{space 2} .9084026{col 37}{space 1}   -2.01{col 46}{space 3}0.044{col 54}{space 4} -3.60866{col 67}{space 3} -.047787
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .5173424{col 26}{space 2} 1.899862{col 37}{space 1}    0.27{col 46}{space 3}0.785{col 54}{space 4}-3.206319{col 67}{space 3} 4.241004
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit ControlWins MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-37.477652}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-30.322354}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-29.276555}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-29.256235}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-29.256188}  
+Iteration 5:{space 3}log pseudolikelihood = {res:-29.256188}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}8{txt}){col 67}= {res}     15.15
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0563
+{txt}Log pseudolikelihood = {res}-29.256188{txt}{col 51}Pseudo R2{col 67}= {res}    0.2194
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1} ControlWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} 1.903897{col 26}{space 2} .8273366{col 37}{space 1}    2.30{col 46}{space 3}0.021{col 54}{space 4} .2823474{col 67}{space 3} 3.525447
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.5047657{col 26}{space 2} .7771402{col 37}{space 1}   -0.65{col 46}{space 3}0.516{col 54}{space 4}-2.027933{col 67}{space 3} 1.018401
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}  1.68826{col 26}{space 2} 1.796205{col 37}{space 1}    0.94{col 46}{space 3}0.347{col 54}{space 4}-1.832237{col 67}{space 3} 5.208756
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 2.355997{col 26}{space 2} 1.691263{col 37}{space 1}    1.39{col 46}{space 3}0.164{col 54}{space 4}-.9588175{col 67}{space 3} 5.670811
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2} .6464024{col 26}{space 2} 2.130028{col 37}{space 1}    0.30{col 46}{space 3}0.762{col 54}{space 4}-3.528376{col 67}{space 3} 4.821181
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-1.580302{col 26}{space 2} 1.001919{col 37}{space 1}   -1.58{col 46}{space 3}0.115{col 54}{space 4}-3.544027{col 67}{space 3} .3834223
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-1.899665{col 26}{space 2} .9017993{col 37}{space 1}   -2.11{col 46}{space 3}0.035{col 54}{space 4} -3.66716{col 67}{space 3}-.1321711
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} .3606137{col 26}{space 2} .7971355{col 37}{space 1}    0.45{col 46}{space 3}0.651{col 54}{space 4}-1.201743{col 67}{space 3} 1.922971
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .6034535{col 26}{space 2}  1.96353{col 37}{space 1}    0.31{col 46}{space 3}0.759{col 54}{space 4}-3.244995{col 67}{space 3} 4.451902
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-56.740469}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-49.157313}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-49.141503}  
+Iteration 3:{space 3}log pseudolikelihood = {res: -49.14149}  
+Iteration 4:{space 3}log pseudolikelihood = {res: -49.14149}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}7{txt}){col 67}= {res}     13.86
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0537
+{txt}Log pseudolikelihood = {res} -49.14149{txt}{col 51}Pseudo R2{col 67}= {res}    0.1339
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}    TestWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.402122{col 26}{space 2} .5374759{col 37}{space 1}   -2.61{col 46}{space 3}0.009{col 54}{space 4}-2.455556{col 67}{space 3}-.3486888
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} 1.042185{col 26}{space 2} .5547727{col 37}{space 1}    1.88{col 46}{space 3}0.060{col 54}{space 4}-.0451498{col 67}{space 3} 2.129519
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-1.284109{col 26}{space 2} 1.049857{col 37}{space 1}   -1.22{col 46}{space 3}0.221{col 54}{space 4}-3.341791{col 67}{space 3} .7735729
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} -.927559{col 26}{space 2} 1.218025{col 37}{space 1}   -0.76{col 46}{space 3}0.446{col 54}{space 4}-3.314844{col 67}{space 3} 1.459726
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.5129395{col 26}{space 2} .8924056{col 37}{space 1}   -0.57{col 46}{space 3}0.565{col 54}{space 4}-2.262022{col 67}{space 3} 1.236143
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.4097352{col 26}{space 2} .8116233{col 37}{space 1}   -0.50{col 46}{space 3}0.614{col 54}{space 4}-2.000488{col 67}{space 3} 1.181017
+{txt}AssistantA~t {c |}{col 14}{res}{space 2} .1336922{col 26}{space 2} .5764449{col 37}{space 1}    0.23{col 46}{space 3}0.817{col 54}{space 4}-.9961191{col 67}{space 3} 1.263504
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 1.136242{col 26}{space 2} 1.202393{col 37}{space 1}    0.94{col 46}{space 3}0.345{col 54}{space 4}-1.220406{col 67}{space 3} 3.492889
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-56.740469}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-48.875026}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-48.859834}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-48.859821}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-48.859821}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}8{txt}){col 67}= {res}     14.62
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0669
+{txt}Log pseudolikelihood = {res}-48.859821{txt}{col 51}Pseudo R2{col 67}= {res}    0.1389
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}    TestWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.433006{col 26}{space 2} .5352611{col 37}{space 1}   -2.68{col 46}{space 3}0.007{col 54}{space 4}-2.482099{col 67}{space 3}-.3839135
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} 1.098487{col 26}{space 2} .5542082{col 37}{space 1}    1.98{col 46}{space 3}0.047{col 54}{space 4} .0122585{col 67}{space 3} 2.184715
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-1.138805{col 26}{space 2} 1.059715{col 37}{space 1}   -1.07{col 46}{space 3}0.283{col 54}{space 4}-3.215808{col 67}{space 3} .9381984
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2}-.8171761{col 26}{space 2} 1.230258{col 37}{space 1}   -0.66{col 46}{space 3}0.507{col 54}{space 4}-3.228438{col 67}{space 3} 1.594086
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.4435976{col 26}{space 2} .8869031{col 37}{space 1}   -0.50{col 46}{space 3}0.617{col 54}{space 4}-2.181896{col 67}{space 3} 1.294701
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.3248746{col 26}{space 2} .8282877{col 37}{space 1}   -0.39{col 46}{space 3}0.695{col 54}{space 4}-1.948289{col 67}{space 3} 1.298539
+{txt}AssistantA~t {c |}{col 14}{res}{space 2} .2464753{col 26}{space 2}  .585503{col 37}{space 1}    0.42{col 46}{space 3}0.674{col 54}{space 4}-.9010895{col 67}{space 3}  1.39404
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.4702507{col 26}{space 2} .6260616{col 37}{space 1}   -0.75{col 46}{space 3}0.453{col 54}{space 4}-1.697309{col 67}{space 3} .7568075
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 1.027289{col 26}{space 2} 1.201274{col 37}{space 1}    0.86{col 46}{space 3}0.392{col 54}{space 4}-1.327165{col 67}{space 3} 3.381743
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. gen interact=MuslimPair*test_photo
+{txt}
+{com}. logit ControlWins MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo interact, robust
+
+{txt}note: interact != 0 predicts success perfectly
+      interact dropped and 7 obs not used
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:  -36.1015}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-29.410554}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-28.556699}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-28.542051}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-28.542022}  
+Iteration 5:{space 3}log pseudolikelihood = {res:-28.542022}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        75
+{txt}{col 51}Wald chi2({res}8{txt}){col 67}= {res}     13.71
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0896
+{txt}Log pseudolikelihood = {res}-28.542022{txt}{col 51}Pseudo R2{col 67}= {res}    0.2094
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1} ControlWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} 1.478031{col 26}{space 2} .8568884{col 37}{space 1}    1.72{col 46}{space 3}0.085{col 54}{space 4} -.201439{col 67}{space 3} 3.157502
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.5304609{col 26}{space 2} .7606272{col 37}{space 1}   -0.70{col 46}{space 3}0.486{col 54}{space 4}-2.021263{col 67}{space 3}  .960341
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} 1.754076{col 26}{space 2} 1.752806{col 37}{space 1}    1.00{col 46}{space 3}0.317{col 54}{space 4} -1.68136{col 67}{space 3} 5.189511
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 2.486043{col 26}{space 2} 1.667137{col 37}{space 1}    1.49{col 46}{space 3}0.136{col 54}{space 4}-.7814861{col 67}{space 3} 5.753571
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2} .7394204{col 26}{space 2}  2.07618{col 37}{space 1}    0.36{col 46}{space 3}0.722{col 54}{space 4}-3.329818{col 67}{space 3} 4.808659
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-1.561991{col 26}{space 2} 1.000406{col 37}{space 1}   -1.56{col 46}{space 3}0.118{col 54}{space 4} -3.52275{col 67}{space 3} .3987683
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-1.852555{col 26}{space 2} .8813609{col 37}{space 1}   -2.10{col 46}{space 3}0.036{col 54}{space 4}-3.579991{col 67}{space 3}-.1251193
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.0391755{col 26}{space 2} .8766738{col 37}{space 1}   -0.04{col 46}{space 3}0.964{col 54}{space 4}-1.757425{col 67}{space 3} 1.679074
+{txt}{space 4}interact {c |}{col 14}{res}  (omitted)
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} .6082494{col 26}{space 2} 1.954969{col 37}{space 1}    0.31{col 46}{space 3}0.756{col 54}{space 4} -3.22342{col 67}{space 3} 4.439919
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo interact, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-56.740469}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-48.875187}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-48.859182}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-48.859168}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-48.859168}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}        82
+{txt}{col 51}Wald chi2({res}9{txt}){col 67}= {res}     14.64
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.1014
+{txt}Log pseudolikelihood = {res}-48.859168{txt}{col 51}Pseudo R2{col 67}= {res}    0.1389
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}    TestWins{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.442312{col 26}{space 2} .5919829{col 37}{space 1}   -2.44{col 46}{space 3}0.015{col 54}{space 4}-2.602577{col 67}{space 3}-.2820471
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} 1.097649{col 26}{space 2} .5538753{col 37}{space 1}    1.98{col 46}{space 3}0.048{col 54}{space 4}  .012073{col 67}{space 3} 2.183224
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-1.136578{col 26}{space 2} 1.064596{col 37}{space 1}   -1.07{col 46}{space 3}0.286{col 54}{space 4}-3.223148{col 67}{space 3}  .949992
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2}-.8133003{col 26}{space 2} 1.241052{col 37}{space 1}   -0.66{col 46}{space 3}0.512{col 54}{space 4}-3.245717{col 67}{space 3} 1.619117
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.4390633{col 26}{space 2} .8978511{col 37}{space 1}   -0.49{col 46}{space 3}0.625{col 54}{space 4}-2.198819{col 67}{space 3} 1.320693
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.3248704{col 26}{space 2} .8285298{col 37}{space 1}   -0.39{col 46}{space 3}0.695{col 54}{space 4}-1.948759{col 67}{space 3} 1.299018
+{txt}AssistantA~t {c |}{col 14}{res}{space 2} .2475559{col 26}{space 2} .5854691{col 37}{space 1}    0.42{col 46}{space 3}0.672{col 54}{space 4}-.8999424{col 67}{space 3} 1.395054
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.4876741{col 26}{space 2} .7904251{col 37}{space 1}   -0.62{col 46}{space 3}0.537{col 54}{space 4}-2.036879{col 67}{space 3} 1.061531
+{txt}{space 4}interact {c |}{col 14}{res}{space 2} .0447631{col 26}{space 2} 1.266474{col 37}{space 1}    0.04{col 46}{space 3}0.972{col 54}{space 4} -2.43748{col 67}{space 3} 2.527006
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} 1.028096{col 26}{space 2} 1.199435{col 37}{space 1}    0.86{col 46}{space 3}0.391{col 54}{space 4}-1.322753{col 67}{space 3} 3.378944
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. /* Now we specify an alternative coding, one where we count cases where both get an explicit no as zero's instead of missing data
+> Yet we continue to count NRNR, NRNo, NoNR as missing data (not usable). */
+. 
+. gen ControlWins2=1 if newresult=="NRYes" | newresult=="NoYes" | newresult=="YesYes"
+{txt}(205 missing values generated)
+
+{com}. replace ControlWins2=0 if ControlWins2==.
+{txt}(205 real changes made)
+
+{com}. replace ControlWins2=. if newresult=="" | newresult=="NRNR" | newresult=="NRNo" | newresult=="NoNR"
+{txt}(154 real changes made, 154 to missing)
+
+{com}. 
+. gen TestWins2=1 if newresult=="YesNR" | newresult=="YesNo" | newresult=="YesYes"
+{txt}(235 missing values generated)
+
+{com}. replace TestWins2=0 if TestWins2==.
+{txt}(235 real changes made)
+
+{com}. replace TestWins2=. if newresult=="" | newresult=="NRNR" | newresult=="NRNo" | newresult=="NoNR"
+{txt}(154 real changes made, 154 to missing)
+
+{com}. 
+. summarize TestWins2 ControlWins2
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 3}TestWins2 {c |}{res}       121    .3305785    .4723775          0          1
+{txt}ControlWins2 {c |}{res}       121    .5785124    .4958506          0          1
+{txt}
+{com}. summarize TestWins2 ControlWins2 if MuslimPair==1
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 3}TestWins2 {c |}{res}        52    .2115385    .4123837          0          1
+{txt}ControlWins2 {c |}{res}        52    .6346154    .4862359          0          1
+{txt}
+{com}. summarize TestWins2 ControlWins2 if ChristianPair==1
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 3}TestWins2 {c |}{res}        69    .4202899    .4972216          0          1
+{txt}ControlWins2 {c |}{res}        69    .5362319    .5023389          0          1
+{txt}
+{com}. 
+. ttest TestWins2, by(MuslimPair) unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+   Group{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+       0 {c |}{res}{col 12}     69{col 22} .4202899{col 34} .0598584{col 46} .4972216{col 58} .3008442{col 70} .5397355
+       {txt}1 {c |}{res}{col 12}     52{col 22} .2115385{col 34} .0571873{col 46} .4123837{col 58} .0967301{col 70} .3263468
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    121{col 22} .3305785{col 34} .0429434{col 46} .4723775{col 58} .2455536{col 70} .4156035
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22} .2087514{col 34} .0827854{col 58} .0448118{col 70}  .372691
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}0{txt}) - mean({res}1{txt})                                      t = {res}  2.5216
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 117.862
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.9935         {txt}Pr(|T| > |t|) = {res}0.0130          {txt}Pr(T > t) = {res}0.0065
+{txt}
+{com}. ttest ControlWins2, by(MuslimPair) unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+   Group{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+       0 {c |}{res}{col 12}     69{col 22} .5362319{col 34} .0604745{col 46} .5023389{col 58} .4155569{col 70} .6569069
+       {txt}1 {c |}{res}{col 12}     52{col 22} .6346154{col 34} .0674288{col 46} .4862359{col 58} .4992464{col 70} .7699843
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    121{col 22} .5785124{col 34} .0450773{col 46} .4958506{col 58} .4892624{col 70} .6677624
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22}-.0983835{col 34} .0905749{col 58}-.2778496{col 70} .0810826
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}0{txt}) - mean({res}1{txt})                                      t = {res} -1.0862
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 111.794
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.1399         {txt}Pr(|T| > |t|) = {res}0.2797          {txt}Pr(T > t) = {res}0.8601
+{txt}
+{com}. ttest TestWins2==ControlWins2 if ChristianPair==1, unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+Variable{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+TestWi~2 {c |}{res}{col 12}     69{col 22} .4202899{col 34} .0598584{col 46} .4972216{col 58} .3008442{col 70} .5397355
+{txt}Contro~2 {c |}{res}{col 12}     69{col 22} .5362319{col 34} .0604745{col 46} .5023389{col 58} .4155569{col 70} .6569069
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    138{col 22} .4782609{col 34} .0426775{col 46}  .501347{col 58} .3938691{col 70} .5626527
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22} -.115942{col 34} .0850894{col 58}-.2842116{col 70} .0523275
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}TestWins2{txt}) - mean({res}ControlWins2{txt})                   t = {res} -1.3626
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 135.986
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.0876         {txt}Pr(|T| > |t|) = {res}0.1753          {txt}Pr(T > t) = {res}0.9124
+{txt}
+{com}. ttest TestWins2==ControlWins2 if MuslimPair==1, unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+Variable{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+TestWi~2 {c |}{res}{col 12}     52{col 22} .2115385{col 34} .0571873{col 46} .4123837{col 58} .0967301{col 70} .3263468
+{txt}Contro~2 {c |}{res}{col 12}     52{col 22} .6346154{col 34} .0674288{col 46} .4862359{col 58} .4992464{col 70} .7699843
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    104{col 22} .4230769{col 34} .0486799{col 46} .4964399{col 58} .3265317{col 70} .5196221
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22}-.4230769{col 34}  .088414{col 58}-.5985018{col 70}-.2476521
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}TestWins2{txt}) - mean({res}ControlWins2{txt})                   t = {res} -4.7852
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 99.3517
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.0000         {txt}Pr(|T| > |t|) = {res}0.0000          {txt}Pr(T > t) = {res}1.0000
+{txt}
+{com}. 
+. logit ControlWins2 MuslimPair CDD SmallFirm MediumFirm, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-81.266064}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-78.015103}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-78.009182}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-78.009182}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}4{txt}){col 67}= {res}      5.98
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.2009
+{txt}Log pseudolikelihood = {res}-78.009182{txt}{col 51}Pseudo R2{col 67}= {res}    0.0401
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} .4821399{col 26}{space 2} .3907914{col 37}{space 1}    1.23{col 46}{space 3}0.217{col 54}{space 4}-.2837971{col 67}{space 3} 1.248077
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.4807495{col 26}{space 2} .4118793{col 37}{space 1}   -1.17{col 46}{space 3}0.243{col 54}{space 4}-1.288018{col 67}{space 3}  .326519
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}  .836156{col 26}{space 2} .7669707{col 37}{space 1}    1.09{col 46}{space 3}0.276{col 54}{space 4}-.6670789{col 67}{space 3} 2.339391
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.323825{col 26}{space 2} .8111829{col 37}{space 1}    1.63{col 46}{space 3}0.103{col 54}{space 4}-.2660642{col 67}{space 3} 2.913714
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.5205251{col 26}{space 2} .8155266{col 37}{space 1}   -0.64{col 46}{space 3}0.523{col 54}{space 4}-2.118928{col 67}{space 3} 1.077878
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit ControlWins2 MuslimPair CDD SmallFirm MediumFirm test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-81.266064}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-78.011534}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-78.005649}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-78.005648}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}5{txt}){col 67}= {res}      6.02
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.3047
+{txt}Log pseudolikelihood = {res}-78.005648{txt}{col 51}Pseudo R2{col 67}= {res}    0.0401
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}  .479893{col 26}{space 2} .3917877{col 37}{space 1}    1.22{col 46}{space 3}0.221{col 54}{space 4}-.2879968{col 67}{space 3} 1.247783
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.4755379{col 26}{space 2} .4190453{col 37}{space 1}   -1.13{col 46}{space 3}0.256{col 54}{space 4}-1.296852{col 67}{space 3} .3457758
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .8498174{col 26}{space 2} .7872388{col 37}{space 1}    1.08{col 46}{space 3}0.280{col 54}{space 4}-.6931423{col 67}{space 3} 2.392777
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.330615{col 26}{space 2} .8135893{col 37}{space 1}    1.64{col 46}{space 3}0.102{col 54}{space 4}-.2639907{col 67}{space 3} 2.925221
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.0401945{col 26}{space 2} .4893169{col 37}{space 1}   -0.08{col 46}{space 3}0.935{col 54}{space 4} -.999238{col 67}{space 3} .9188491
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.5249778{col 26}{space 2} .8182136{col 37}{space 1}   -0.64{col 46}{space 3}0.521{col 54}{space 4}-2.128647{col 67}{space 3} 1.078691
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins2 MuslimPair CDD SmallFirm MediumFirm, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-75.274661}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-70.863265}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-70.801862}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-70.801806}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-70.801806}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}4{txt}){col 67}= {res}      8.22
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0838
+{txt}Log pseudolikelihood = {res}-70.801806{txt}{col 51}Pseudo R2{col 67}= {res}    0.0594
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.035428{col 26}{space 2}  .430018{col 37}{space 1}   -2.41{col 46}{space 3}0.016{col 54}{space 4}-1.878248{col 67}{space 3}-.1926082
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .5736151{col 26}{space 2} .4555192{col 37}{space 1}    1.26{col 46}{space 3}0.208{col 54}{space 4}-.3191862{col 67}{space 3} 1.466416
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.0724678{col 26}{space 2} .7016598{col 37}{space 1}   -0.10{col 46}{space 3}0.918{col 54}{space 4}-1.447696{col 67}{space 3}  1.30276
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .3371566{col 26}{space 2} .7398268{col 37}{space 1}    0.46{col 46}{space 3}0.649{col 54}{space 4}-1.112877{col 67}{space 3} 1.787191
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.6974365{col 26}{space 2}  .765502{col 37}{space 1}   -0.91{col 46}{space 3}0.362{col 54}{space 4}-2.197793{col 67}{space 3} .8029199
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins2 MuslimPair CDD SmallFirm MediumFirm test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-75.274661}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-70.652811}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-70.590711}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-70.590657}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-70.590657}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}5{txt}){col 67}= {res}      8.56
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.1278
+{txt}Log pseudolikelihood = {res}-70.590657{txt}{col 51}Pseudo R2{col 67}= {res}    0.0622
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.054229{col 26}{space 2} .4312105{col 37}{space 1}   -2.44{col 46}{space 3}0.014{col 54}{space 4}-1.899386{col 67}{space 3} -.209072
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .6110827{col 26}{space 2} .4586403{col 37}{space 1}    1.33{col 46}{space 3}0.183{col 54}{space 4}-.2878358{col 67}{space 3} 1.510001
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}  .039644{col 26}{space 2} .7185529{col 37}{space 1}    0.06{col 46}{space 3}0.956{col 54}{space 4}-1.368694{col 67}{space 3} 1.447982
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .3942105{col 26}{space 2} .7480177{col 37}{space 1}    0.53{col 46}{space 3}0.598{col 54}{space 4}-1.071877{col 67}{space 3} 1.860298
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.3385426{col 26}{space 2} .5260211{col 37}{space 1}   -0.64{col 46}{space 3}0.520{col 54}{space 4}-1.369525{col 67}{space 3} .6924397
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.7304375{col 26}{space 2} .7674511{col 37}{space 1}   -0.95{col 46}{space 3}0.341{col 54}{space 4}-2.234614{col 67}{space 3}  .773739
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. logit ControlWins2 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-81.266064}  
+Iteration 1:{space 3}log pseudolikelihood = {res:  -72.3186}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-72.286418}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-72.286408}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-72.286408}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}7{txt}){col 67}= {res}     15.73
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0277
+{txt}Log pseudolikelihood = {res}-72.286408{txt}{col 51}Pseudo R2{col 67}= {res}    0.1105
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} .5771356{col 26}{space 2} .4217688{col 37}{space 1}    1.37{col 46}{space 3}0.171{col 54}{space 4}-.2495161{col 67}{space 3} 1.403787
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.5120417{col 26}{space 2}  .454931{col 37}{space 1}   -1.13{col 46}{space 3}0.260{col 54}{space 4} -1.40369{col 67}{space 3} .3796066
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} 1.097109{col 26}{space 2} .7541715{col 37}{space 1}    1.45{col 46}{space 3}0.146{col 54}{space 4}-.3810397{col 67}{space 3} 2.575258
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.315854{col 26}{space 2} .8124851{col 37}{space 1}    1.62{col 46}{space 3}0.105{col 54}{space 4}-.2765874{col 67}{space 3} 2.908296
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2} .3376063{col 26}{space 2} .8300543{col 37}{space 1}    0.41{col 46}{space 3}0.684{col 54}{space 4} -1.28927{col 67}{space 3} 1.964483
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-1.550465{col 26}{space 2} .5638693{col 37}{space 1}   -2.75{col 46}{space 3}0.006{col 54}{space 4}-2.655629{col 67}{space 3}-.4453015
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.8268904{col 26}{space 2} .4951112{col 37}{space 1}   -1.67{col 46}{space 3}0.095{col 54}{space 4}-1.797291{col 67}{space 3} .1435097
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.0737127{col 26}{space 2} .8765779{col 37}{space 1}   -0.08{col 46}{space 3}0.933{col 54}{space 4}-1.791774{col 67}{space 3} 1.644348
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit ControlWins2 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-81.266064}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-72.318646}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-72.286377}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-72.286366}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-72.286366}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}8{txt}){col 67}= {res}     15.74
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0463
+{txt}Log pseudolikelihood = {res}-72.286366{txt}{col 51}Pseudo R2{col 67}= {res}    0.1105
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} .5773847{col 26}{space 2} .4243552{col 37}{space 1}    1.36{col 46}{space 3}0.174{col 54}{space 4}-.2543362{col 67}{space 3} 1.409106
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2}-.5125448{col 26}{space 2} .4542488{col 37}{space 1}   -1.13{col 46}{space 3}0.259{col 54}{space 4}-1.402856{col 67}{space 3} .3777665
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} 1.095674{col 26}{space 2} .7688293{col 37}{space 1}    1.43{col 46}{space 3}0.154{col 54}{space 4}-.4112033{col 67}{space 3} 2.602552
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.315132{col 26}{space 2} .8145842{col 37}{space 1}    1.61{col 46}{space 3}0.106{col 54}{space 4}-.2814242{col 67}{space 3} 2.911687
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2} .3373323{col 26}{space 2} .8342697{col 37}{space 1}    0.40{col 46}{space 3}0.686{col 54}{space 4}-1.297806{col 67}{space 3} 1.972471
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-1.550587{col 26}{space 2} .5647533{col 37}{space 1}   -2.75{col 46}{space 3}0.006{col 54}{space 4}-2.657484{col 67}{space 3}-.4436912
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.8274384{col 26}{space 2} .5073128{col 37}{space 1}   -1.63{col 46}{space 3}0.103{col 54}{space 4}-1.821753{col 67}{space 3} .1668764
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} .0045356{col 26}{space 2} .5507389{col 37}{space 1}    0.01{col 46}{space 3}0.993{col 54}{space 4}-1.074893{col 67}{space 3} 1.083964
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.0731088{col 26}{space 2}  .879944{col 37}{space 1}   -0.08{col 46}{space 3}0.934{col 54}{space 4}-1.797767{col 67}{space 3}  1.65155
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins2 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-75.274661}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-69.498431}  
+Iteration 2:{space 3}log pseudolikelihood = {res: -69.39063}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-69.390596}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-69.390596}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}7{txt}){col 67}= {res}     10.05
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.1860
+{txt}Log pseudolikelihood = {res}-69.390596{txt}{col 51}Pseudo R2{col 67}= {res}    0.0782
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.030939{col 26}{space 2} .4339583{col 37}{space 1}   -2.38{col 46}{space 3}0.018{col 54}{space 4}-1.881482{col 67}{space 3}-.1803963
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .5118032{col 26}{space 2}  .460482{col 37}{space 1}    1.11{col 46}{space 3}0.266{col 54}{space 4}-.3907249{col 67}{space 3} 1.414331
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.2403978{col 26}{space 2} .7270646{col 37}{space 1}   -0.33{col 46}{space 3}0.741{col 54}{space 4}-1.665418{col 67}{space 3} 1.184623
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2}-.0301129{col 26}{space 2} .8072073{col 37}{space 1}   -0.04{col 46}{space 3}0.970{col 54}{space 4} -1.61221{col 67}{space 3} 1.551984
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.2152741{col 26}{space 2} .7238844{col 37}{space 1}   -0.30{col 46}{space 3}0.766{col 54}{space 4}-1.634061{col 67}{space 3} 1.203513
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.9032608{col 26}{space 2} .6197767{col 37}{space 1}   -1.46{col 46}{space 3}0.145{col 54}{space 4}-2.118001{col 67}{space 3} .3114793
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.0139523{col 26}{space 2} .5077308{col 37}{space 1}   -0.03{col 46}{space 3}0.978{col 54}{space 4}-1.009086{col 67}{space 3} .9811818
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.2191987{col 26}{space 2} .8803372{col 37}{space 1}   -0.25{col 46}{space 3}0.803{col 54}{space 4}-1.944628{col 67}{space 3} 1.506231
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins2 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-75.274661}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-69.265005}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-69.148119}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-69.148083}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-69.148083}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}8{txt}){col 67}= {res}     10.17
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.2530
+{txt}Log pseudolikelihood = {res}-69.148083{txt}{col 51}Pseudo R2{col 67}= {res}    0.0814
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.047951{col 26}{space 2} .4330132{col 37}{space 1}   -2.42{col 46}{space 3}0.016{col 54}{space 4}-1.896642{col 67}{space 3} -.199261
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .5505541{col 26}{space 2}  .463279{col 37}{space 1}    1.19{col 46}{space 3}0.235{col 54}{space 4} -.357456{col 67}{space 3} 1.458564
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.1238745{col 26}{space 2} .7391132{col 37}{space 1}   -0.17{col 46}{space 3}0.867{col 54}{space 4} -1.57251{col 67}{space 3} 1.324761
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .0326898{col 26}{space 2} .8125176{col 37}{space 1}    0.04{col 46}{space 3}0.968{col 54}{space 4}-1.559815{col 67}{space 3} 1.625195
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.1866952{col 26}{space 2} .7150302{col 37}{space 1}   -0.26{col 46}{space 3}0.794{col 54}{space 4}-1.588129{col 67}{space 3} 1.214738
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.8894862{col 26}{space 2} .6206134{col 37}{space 1}   -1.43{col 46}{space 3}0.152{col 54}{space 4}-2.105866{col 67}{space 3} .3268937
+{txt}AssistantA~t {c |}{col 14}{res}{space 2} .0310808{col 26}{space 2} .5118906{col 37}{space 1}    0.06{col 46}{space 3}0.952{col 54}{space 4}-.9722064{col 67}{space 3} 1.034368
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.3706853{col 26}{space 2} .5459131{col 37}{space 1}   -0.68{col 46}{space 3}0.497{col 54}{space 4}-1.440655{col 67}{space 3} .6992847
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2} -.272723{col 26}{space 2} .8769643{col 37}{space 1}   -0.31{col 46}{space 3}0.756{col 54}{space 4}-1.991541{col 67}{space 3} 1.446095
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. logit ControlWins2 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo interact, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-81.266064}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-71.978775}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-71.947424}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-71.947416}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-71.947416}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}9{txt}){col 67}= {res}     15.82
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0707
+{txt}Log pseudolikelihood = {res}-71.947416{txt}{col 51}Pseudo R2{col 67}= {res}    0.1147
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} .4038295{col 26}{space 2} .4475591{col 37}{space 1}    0.90{col 46}{space 3}0.367{col 54}{space 4}-.4733702{col 67}{space 3} 1.281029
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} -.538346{col 26}{space 2} .4587575{col 37}{space 1}   -1.17{col 46}{space 3}0.241{col 54}{space 4}-1.437494{col 67}{space 3} .3608022
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} 1.121489{col 26}{space 2} .7529951{col 37}{space 1}    1.49{col 46}{space 3}0.136{col 54}{space 4}-.3543548{col 67}{space 3} 2.597332
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.342756{col 26}{space 2} .8008666{col 37}{space 1}    1.68{col 46}{space 3}0.094{col 54}{space 4}-.2269134{col 67}{space 3} 2.912426
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2} .4189777{col 26}{space 2} .8250495{col 37}{space 1}    0.51{col 46}{space 3}0.612{col 54}{space 4} -1.19809{col 67}{space 3} 2.036045
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-1.515275{col 26}{space 2}  .560556{col 37}{space 1}   -2.70{col 46}{space 3}0.007{col 54}{space 4}-2.613945{col 67}{space 3}-.4166058
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.8104753{col 26}{space 2} .5135853{col 37}{space 1}   -1.58{col 46}{space 3}0.115{col 54}{space 4}-1.817084{col 67}{space 3} .1961334
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.3261709{col 26}{space 2} .6714522{col 37}{space 1}   -0.49{col 46}{space 3}0.627{col 54}{space 4}-1.642193{col 67}{space 3} .9898513
+{txt}{space 4}interact {c |}{col 14}{res}{space 2} .8341982{col 26}{space 2} 1.140817{col 37}{space 1}    0.73{col 46}{space 3}0.465{col 54}{space 4}-1.401762{col 67}{space 3} 3.070158
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.0298503{col 26}{space 2} .8687823{col 37}{space 1}   -0.03{col 46}{space 3}0.973{col 54}{space 4}-1.732632{col 67}{space 3} 1.672932
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins2 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo interact, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-75.274661}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-69.259716}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-69.140539}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-69.140502}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-69.140502}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       119
+{txt}{col 51}Wald chi2({res}9{txt}){col 67}= {res}     10.34
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.3238
+{txt}Log pseudolikelihood = {res}-69.140502{txt}{col 51}Pseudo R2{col 67}= {res}    0.0815
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins2{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.073879{col 26}{space 2} .4767126{col 37}{space 1}   -2.25{col 46}{space 3}0.024{col 54}{space 4}-2.008219{col 67}{space 3}-.1395396
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .5482598{col 26}{space 2} .4625322{col 37}{space 1}    1.19{col 46}{space 3}0.236{col 54}{space 4}-.3582866{col 67}{space 3} 1.454806
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.1185007{col 26}{space 2} .7422988{col 37}{space 1}   -0.16{col 46}{space 3}0.873{col 54}{space 4} -1.57338{col 67}{space 3} 1.336378
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .0373546{col 26}{space 2} .8134886{col 37}{space 1}    0.05{col 46}{space 3}0.963{col 54}{space 4}-1.557054{col 67}{space 3} 1.631763
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.1740786{col 26}{space 2}  .727363{col 37}{space 1}   -0.24{col 46}{space 3}0.811{col 54}{space 4}-1.599684{col 67}{space 3} 1.251527
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.8846468{col 26}{space 2} .6284725{col 37}{space 1}   -1.41{col 46}{space 3}0.159{col 54}{space 4} -2.11643{col 67}{space 3} .3471367
+{txt}AssistantA~t {c |}{col 14}{res}{space 2} .0345909{col 26}{space 2} .5139027{col 37}{space 1}    0.07{col 46}{space 3}0.946{col 54}{space 4}-.9726398{col 67}{space 3} 1.041822
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} -.417209{col 26}{space 2} .6687584{col 37}{space 1}   -0.62{col 46}{space 3}0.533{col 54}{space 4}-1.727951{col 67}{space 3} .8935334
+{txt}{space 4}interact {c |}{col 14}{res}{space 2} .1364054{col 26}{space 2} 1.148533{col 37}{space 1}    0.12{col 46}{space 3}0.905{col 54}{space 4}-2.114678{col 67}{space 3} 2.387488
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-.2701622{col 26}{space 2} .8754397{col 37}{space 1}   -0.31{col 46}{space 3}0.758{col 54}{space 4}-1.985993{col 67}{space 3} 1.445668
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. /* Finally, we specify one last alternative coding, one where we count all NR and No cases as zeros and keep only as missing
+> data those invalid tests with email address errors. */
+. 
+. gen ControlWins3=1 if newresult=="NRYes" | newresult=="NoYes" | newresult=="YesYes"
+{txt}(205 missing values generated)
+
+{com}. replace ControlWins3=0 if ControlWins3==.
+{txt}(205 real changes made)
+
+{com}. replace ControlWins3=. if newresult==""
+{txt}(4 real changes made, 4 to missing)
+
+{com}. 
+. gen TestWins3=1 if newresult=="YesNR" | newresult=="YesNo" | newresult=="YesYes"
+{txt}(235 missing values generated)
+
+{com}. replace TestWins3=0 if TestWins3==.
+{txt}(235 real changes made)
+
+{com}. replace TestWins3=. if newresult==""
+{txt}(4 real changes made, 4 to missing)
+
+{com}. 
+. summarize TestWins3 ControlWins3
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 3}TestWins3 {c |}{res}       271    .1476015    .3553608          0          1
+{txt}ControlWins3 {c |}{res}       271    .2583026     .438511          0          1
+{txt}
+{com}. summarize TestWins3 ControlWins3 if MuslimPair==1
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 3}TestWins3 {c |}{res}       133    .0827068    .2764798          0          1
+{txt}ControlWins3 {c |}{res}       133    .2481203     .433555          0          1
+{txt}
+{com}. summarize TestWins3 ControlWins3 if ChristianPair==1
+
+{txt}    Variable {c |}       Obs        Mean    Std. Dev.       Min        Max
+{hline 13}{c +}{hline 56}
+{space 3}TestWins3 {c |}{res}       138    .2101449    .4088956          0          1
+{txt}ControlWins3 {c |}{res}       138    .2681159    .4445921          0          1
+{txt}
+{com}. 
+. ttest TestWins3, by(MuslimPair) unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+   Group{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+       0 {c |}{res}{col 12}    138{col 22} .2101449{col 34} .0348075{col 46} .4088956{col 58} .1413155{col 70} .2789744
+       {txt}1 {c |}{res}{col 12}    133{col 22} .0827068{col 34} .0239738{col 46} .2764798{col 58} .0352841{col 70} .1301294
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    271{col 22} .1476015{col 34} .0215866{col 46} .3553608{col 58}  .105102{col 70}  .190101
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22} .1274382{col 34} .0422647{col 58} .0441835{col 70} .2106929
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}0{txt}) - mean({res}1{txt})                                      t = {res}  3.0152
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 241.424
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.9986         {txt}Pr(|T| > |t|) = {res}0.0028          {txt}Pr(T > t) = {res}0.0014
+{txt}
+{com}. ttest ControlWins3, by(MuslimPair) unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+   Group{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+       0 {c |}{res}{col 12}    138{col 22} .2681159{col 34} .0378462{col 46} .4445921{col 58} .1932777{col 70} .3429542
+       {txt}1 {c |}{res}{col 12}    133{col 22} .2481203{col 34}  .037594{col 46}  .433555{col 58} .1737557{col 70} .3224849
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    271{col 22} .2583026{col 34} .0266376{col 46}  .438511{col 58} .2058587{col 70} .3107465
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22} .0199956{col 34} .0533446{col 58}-.0850304{col 70} .1250216
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}0{txt}) - mean({res}1{txt})                                      t = {res}  0.3748
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 268.962
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.6460         {txt}Pr(|T| > |t|) = {res}0.7081          {txt}Pr(T > t) = {res}0.3540
+{txt}
+{com}. ttest TestWins3==ControlWins3 if ChristianPair==1, unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+Variable{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+TestWi~3 {c |}{res}{col 12}    138{col 22} .2101449{col 34} .0348075{col 46} .4088956{col 58} .1413155{col 70} .2789744
+{txt}Contro~3 {c |}{res}{col 12}    138{col 22} .2681159{col 34} .0378462{col 46} .4445921{col 58} .1932777{col 70} .3429542
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    276{col 22} .2391304{col 34} .0257221{col 46} .4273274{col 58} .1884932{col 70} .2897677
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22} -.057971{col 34} .0514188{col 58}-.1592003{col 70} .0432583
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}TestWins3{txt}) - mean({res}ControlWins3{txt})                   t = {res} -1.1274
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 272.103
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.1303         {txt}Pr(|T| > |t|) = {res}0.2606          {txt}Pr(T > t) = {res}0.8697
+{txt}
+{com}. ttest TestWins3==ControlWins3 if MuslimPair==1, unpaired unequal
+
+{txt}Two-sample t test with unequal variances
+{hline 9}{c TT}{hline 68}
+Variable{col 10}{c |}{col 16}Obs{col 27}Mean{col 35}Std. Err.{col 47}Std. Dev.{col 59}[95% Conf. Interval]
+{hline 9}{c +}{hline 68}
+TestWi~3 {c |}{res}{col 12}    133{col 22} .0827068{col 34} .0239738{col 46} .2764798{col 58} .0352841{col 70} .1301294
+{txt}Contro~3 {c |}{res}{col 12}    133{col 22} .2481203{col 34}  .037594{col 46}  .433555{col 58} .1737557{col 70} .3224849
+{txt}{hline 9}{c +}{hline 68}
+combined {c |}{res}{col 12}    266{col 22} .1654135{col 34} .0228243{col 46} .3722537{col 58} .1204734{col 70} .2103537
+{txt}{hline 9}{c +}{hline 68}
+    diff {c |}{res}{col 22}-.1654135{col 34} .0445876{col 58}-.2532781{col 70} -.077549
+{txt}{hline 9}{c BT}{hline 68}
+    diff = mean({res}TestWins3{txt}) - mean({res}ControlWins3{txt})                   t = {res} -3.7099
+{txt}Ho: diff = 0                     Satterthwaite's degrees of freedom = {res} 224.125
+
+    {txt}Ha: diff < 0                 Ha: diff != 0                 Ha: diff > 0
+ Pr(T < t) = {res}0.0001         {txt}Pr(|T| > |t|) = {res}0.0003          {txt}Pr(T > t) = {res}0.9999
+{txt}
+{com}. 
+. logit ControlWins3 MuslimPair CDD SmallFirm MediumFirm, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-150.91075}  
+Iteration 1:{space 3}log pseudolikelihood = {res: -149.2713}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-149.23976}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-149.23975}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}4{txt}){col 67}= {res}      3.12
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.5384
+{txt}Log pseudolikelihood = {res}-149.23975{txt}{col 51}Pseudo R2{col 67}= {res}    0.0111
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2} -.050321{col 26}{space 2} .2831137{col 37}{space 1}   -0.18{col 46}{space 3}0.859{col 54}{space 4}-.6052136{col 67}{space 3} .5045717
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .1230971{col 26}{space 2} .2853361{col 37}{space 1}    0.43{col 46}{space 3}0.666{col 54}{space 4}-.4361514{col 67}{space 3} .6823456
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .8648598{col 26}{space 2} .6395362{col 37}{space 1}    1.35{col 46}{space 3}0.176{col 54}{space 4}-.3886082{col 67}{space 3} 2.118328
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.121147{col 26}{space 2} .6756188{col 37}{space 1}    1.66{col 46}{space 3}0.097{col 54}{space 4}-.2030413{col 67}{space 3} 2.445336
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.970683{col 26}{space 2} .6609272{col 37}{space 1}   -2.98{col 46}{space 3}0.003{col 54}{space 4}-3.266076{col 67}{space 3} -.675289
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit ControlWins3 MuslimPair CDD SmallFirm MediumFirm test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-150.91075}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-149.22348}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-149.19058}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-149.19056}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}5{txt}){col 67}= {res}      3.33
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.6500
+{txt}Log pseudolikelihood = {res}-149.19056{txt}{col 51}Pseudo R2{col 67}= {res}    0.0114
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-.0494182{col 26}{space 2} .2831994{col 37}{space 1}   -0.17{col 46}{space 3}0.861{col 54}{space 4}-.6044788{col 67}{space 3} .5056424
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .1292089{col 26}{space 2}  .284805{col 37}{space 1}    0.45{col 46}{space 3}0.650{col 54}{space 4}-.4289986{col 67}{space 3} .6874164
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .8810617{col 26}{space 2} .6364849{col 37}{space 1}    1.38{col 46}{space 3}0.166{col 54}{space 4}-.3664259{col 67}{space 3} 2.128549
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.121994{col 26}{space 2} .6743237{col 37}{space 1}    1.66{col 46}{space 3}0.096{col 54}{space 4}-.1996566{col 67}{space 3} 2.443644
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.1095683{col 26}{space 2} .3465312{col 37}{space 1}   -0.32{col 46}{space 3}0.752{col 54}{space 4} -.788757{col 67}{space 3} .5696204
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.962006{col 26}{space 2} .6623731{col 37}{space 1}   -2.96{col 46}{space 3}0.003{col 54}{space 4}-3.260233{col 67}{space 3}-.6637781
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins3 MuslimPair CDD SmallFirm MediumFirm, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-110.70859}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-103.91063}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-103.54898}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-103.54763}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-103.54763}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}4{txt}){col 67}= {res}     13.94
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0075
+{txt}Log pseudolikelihood = {res}-103.54763{txt}{col 51}Pseudo R2{col 67}= {res}    0.0647
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.103152{col 26}{space 2} .3836209{col 37}{space 1}   -2.88{col 46}{space 3}0.004{col 54}{space 4}-1.855035{col 67}{space 3}-.3512685
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .7715203{col 26}{space 2} .3816921{col 37}{space 1}    2.02{col 46}{space 3}0.043{col 54}{space 4} .0234175{col 67}{space 3} 1.519623
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.0851805{col 26}{space 2} .5779791{col 37}{space 1}   -0.15{col 46}{space 3}0.883{col 54}{space 4}-1.217999{col 67}{space 3} 1.047638
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .2693112{col 26}{space 2} .6218497{col 37}{space 1}    0.43{col 46}{space 3}0.665{col 54}{space 4}-.9494918{col 67}{space 3} 1.488114
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.774932{col 26}{space 2} .6231875{col 37}{space 1}   -2.85{col 46}{space 3}0.004{col 54}{space 4}-2.996357{col 67}{space 3}-.5535065
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins3 MuslimPair CDD SmallFirm MediumFirm test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-110.70859}  
+Iteration 1:{space 3}log pseudolikelihood = {res: -103.7721}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-103.39613}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-103.39476}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-103.39476}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}5{txt}){col 67}= {res}     14.47
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0129
+{txt}Log pseudolikelihood = {res}-103.39476{txt}{col 51}Pseudo R2{col 67}= {res}    0.0661
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.101685{col 26}{space 2} .3836976{col 37}{space 1}   -2.87{col 46}{space 3}0.004{col 54}{space 4}-1.853718{col 67}{space 3}-.3496514
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .7867468{col 26}{space 2} .3835156{col 37}{space 1}    2.05{col 46}{space 3}0.040{col 54}{space 4} .0350701{col 67}{space 3} 1.538423
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.0435156{col 26}{space 2} .5742762{col 37}{space 1}   -0.08{col 46}{space 3}0.940{col 54}{space 4}-1.169076{col 67}{space 3} 1.082045
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .2682456{col 26}{space 2} .6201611{col 37}{space 1}    0.43{col 46}{space 3}0.665{col 54}{space 4}-.9472479{col 67}{space 3} 1.483739
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2}-.2534028{col 26}{space 2} .4615399{col 37}{space 1}   -0.55{col 46}{space 3}0.583{col 54}{space 4}-1.158004{col 67}{space 3} .6511988
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.759242{col 26}{space 2} .6229093{col 37}{space 1}   -2.82{col 46}{space 3}0.005{col 54}{space 4}-2.980121{col 67}{space 3}-.5383619
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. logit ControlWins3 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-150.91075}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-146.42756}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-146.31718}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-146.31682}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-146.31682}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}7{txt}){col 67}= {res}      8.72
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.2736
+{txt}Log pseudolikelihood = {res}-146.31682{txt}{col 51}Pseudo R2{col 67}= {res}    0.0304
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-.0381568{col 26}{space 2} .2861537{col 37}{space 1}   -0.13{col 46}{space 3}0.894{col 54}{space 4}-.5990078{col 67}{space 3} .5226943
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .1003006{col 26}{space 2} .2917183{col 37}{space 1}    0.34{col 46}{space 3}0.731{col 54}{space 4}-.4714567{col 67}{space 3} .6720579
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .8781076{col 26}{space 2} .6558125{col 37}{space 1}    1.34{col 46}{space 3}0.181{col 54}{space 4}-.4072612{col 67}{space 3} 2.163476
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2}  1.06306{col 26}{space 2} .6824292{col 37}{space 1}    1.56{col 46}{space 3}0.119{col 54}{space 4}-.2744771{col 67}{space 3} 2.400596
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.4718992{col 26}{space 2} .4398462{col 37}{space 1}   -1.07{col 46}{space 3}0.283{col 54}{space 4}-1.333982{col 67}{space 3} .3901835
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.9652753{col 26}{space 2} .4076629{col 37}{space 1}   -2.37{col 46}{space 3}0.018{col 54}{space 4} -1.76428{col 67}{space 3}-.1662706
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.4616086{col 26}{space 2} .3550768{col 37}{space 1}   -1.30{col 46}{space 3}0.194{col 54}{space 4}-1.157546{col 67}{space 3} .2343291
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.530606{col 26}{space 2}  .661339{col 37}{space 1}   -2.31{col 46}{space 3}0.021{col 54}{space 4}-2.826807{col 67}{space 3}-.2344059
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit ControlWins3 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-150.91075}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-146.42293}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-146.31207}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-146.31171}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-146.31171}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}8{txt}){col 67}= {res}      8.71
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.3674
+{txt}Log pseudolikelihood = {res}-146.31171{txt}{col 51}Pseudo R2{col 67}= {res}    0.0305
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-.0384639{col 26}{space 2} .2863009{col 37}{space 1}   -0.13{col 46}{space 3}0.893{col 54}{space 4}-.5996035{col 67}{space 3} .5226756
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .0984123{col 26}{space 2} .2909368{col 37}{space 1}    0.34{col 46}{space 3}0.735{col 54}{space 4}-.4718135{col 67}{space 3}  .668638
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .8740381{col 26}{space 2} .6550381{col 37}{space 1}    1.33{col 46}{space 3}0.182{col 54}{space 4} -.409813{col 67}{space 3} 2.157889
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.063428{col 26}{space 2} .6833895{col 37}{space 1}    1.56{col 46}{space 3}0.120{col 54}{space 4}-.2759904{col 67}{space 3} 2.402847
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.4741769{col 26}{space 2} .4401383{col 37}{space 1}   -1.08{col 46}{space 3}0.281{col 54}{space 4}-1.336832{col 67}{space 3} .3884782
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.9720952{col 26}{space 2} .4105187{col 37}{space 1}   -2.37{col 46}{space 3}0.018{col 54}{space 4}-1.776697{col 67}{space 3}-.1674934
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.4698901{col 26}{space 2} .3668258{col 37}{space 1}   -1.28{col 46}{space 3}0.200{col 54}{space 4}-1.188855{col 67}{space 3} .2490752
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} .0369661{col 26}{space 2}  .365239{col 37}{space 1}    0.10{col 46}{space 3}0.919{col 54}{space 4}-.6788891{col 67}{space 3} .7528213
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.530408{col 26}{space 2} .6616843{col 37}{space 1}   -2.31{col 46}{space 3}0.021{col 54}{space 4}-2.827286{col 67}{space 3} -.233531
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins3 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-110.70859}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-102.55352}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-102.02164}  
+Iteration 3:{space 3}log pseudolikelihood = {res: -102.0203}  
+Iteration 4:{space 3}log pseudolikelihood = {res: -102.0203}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}7{txt}){col 67}= {res}     14.95
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0366
+{txt}Log pseudolikelihood = {res} -102.0203{txt}{col 51}Pseudo R2{col 67}= {res}    0.0785
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.112854{col 26}{space 2} .3888956{col 37}{space 1}   -2.86{col 46}{space 3}0.004{col 54}{space 4}-1.875076{col 67}{space 3} -.350633
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .7213453{col 26}{space 2} .3851459{col 37}{space 1}    1.87{col 46}{space 3}0.061{col 54}{space 4}-.0335268{col 67}{space 3} 1.476217
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} -.153664{col 26}{space 2} .5908953{col 37}{space 1}   -0.26{col 46}{space 3}0.795{col 54}{space 4}-1.311797{col 67}{space 3} 1.004469
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .1238596{col 26}{space 2} .6261083{col 37}{space 1}    0.20{col 46}{space 3}0.843{col 54}{space 4} -1.10329{col 67}{space 3} 1.351009
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.5393115{col 26}{space 2} .5701794{col 37}{space 1}   -0.95{col 46}{space 3}0.344{col 54}{space 4}-1.656843{col 67}{space 3} .5782197
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.7970698{col 26}{space 2} .5347642{col 37}{space 1}   -1.49{col 46}{space 3}0.136{col 54}{space 4}-1.845188{col 67}{space 3} .2510489
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.0749368{col 26}{space 2}  .429476{col 37}{space 1}   -0.17{col 46}{space 3}0.861{col 54}{space 4}-.9166943{col 67}{space 3} .7668207
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.387276{col 26}{space 2} .6633568{col 37}{space 1}   -2.09{col 46}{space 3}0.037{col 54}{space 4}-2.687431{col 67}{space 3}-.0871203
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins3 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-110.70859}  
+Iteration 1:{space 3}log pseudolikelihood = {res: -102.4445}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-101.89777}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-101.89643}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-101.89643}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}8{txt}){col 67}= {res}     15.25
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0544
+{txt}Log pseudolikelihood = {res}-101.89643{txt}{col 51}Pseudo R2{col 67}= {res}    0.0796
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.111456{col 26}{space 2}   .38869{col 37}{space 1}   -2.86{col 46}{space 3}0.004{col 54}{space 4}-1.873275{col 67}{space 3}-.3496377
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .7331561{col 26}{space 2} .3869249{col 37}{space 1}    1.89{col 46}{space 3}0.058{col 54}{space 4}-.0252029{col 67}{space 3} 1.491515
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.1227445{col 26}{space 2} .5875168{col 37}{space 1}   -0.21{col 46}{space 3}0.835{col 54}{space 4}-1.274256{col 67}{space 3} 1.028767
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .1201045{col 26}{space 2} .6244591{col 37}{space 1}    0.19{col 46}{space 3}0.847{col 54}{space 4}-1.103813{col 67}{space 3} 1.344022
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.5313183{col 26}{space 2} .5693432{col 37}{space 1}   -0.93{col 46}{space 3}0.351{col 54}{space 4} -1.64721{col 67}{space 3} .5845738
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.7616164{col 26}{space 2} .5347165{col 37}{space 1}   -1.42{col 46}{space 3}0.154{col 54}{space 4}-1.809642{col 67}{space 3} .2864088
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.0258771{col 26}{space 2} .4406796{col 37}{space 1}   -0.06{col 46}{space 3}0.953{col 54}{space 4}-.8895932{col 67}{space 3} .8378391
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} -.236219{col 26}{space 2} .4707429{col 37}{space 1}   -0.50{col 46}{space 3}0.616{col 54}{space 4}-1.158858{col 67}{space 3} .6864202
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.390255{col 26}{space 2} .6603116{col 37}{space 1}   -2.11{col 46}{space 3}0.035{col 54}{space 4}-2.684441{col 67}{space 3}-.0960676
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. logit ControlWins3 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo interact, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-150.91075}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-146.41208}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-146.30067}  
+Iteration 3:{space 3}log pseudolikelihood = {res: -146.3003}  
+Iteration 4:{space 3}log pseudolikelihood = {res: -146.3003}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}9{txt}){col 67}= {res}      8.71
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.4645
+{txt}Log pseudolikelihood = {res} -146.3003{txt}{col 51}Pseudo R2{col 67}= {res}    0.0306
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}ControlWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-.0158496{col 26}{space 2} .3235591{col 37}{space 1}   -0.05{col 46}{space 3}0.961{col 54}{space 4}-.6500137{col 67}{space 3} .6183146
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .0978979{col 26}{space 2} .2912395{col 37}{space 1}    0.34{col 46}{space 3}0.737{col 54}{space 4}-.4729211{col 67}{space 3} .6687169
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2} .8710838{col 26}{space 2} .6551782{col 37}{space 1}    1.33{col 46}{space 3}0.184{col 54}{space 4}-.4130418{col 67}{space 3} 2.155209
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} 1.061707{col 26}{space 2} .6831512{col 37}{space 1}    1.55{col 46}{space 3}0.120{col 54}{space 4}-.2772443{col 67}{space 3} 2.400659
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2}-.4771685{col 26}{space 2} .4392367{col 37}{space 1}   -1.09{col 46}{space 3}0.277{col 54}{space 4}-1.338057{col 67}{space 3} .3837195
+{txt}AssistantD~r {c |}{col 14}{res}{space 2} -.974745{col 26}{space 2} .4115617{col 37}{space 1}   -2.37{col 46}{space 3}0.018{col 54}{space 4}-1.781391{col 67}{space 3} -.168099
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.4733316{col 26}{space 2} .3685617{col 37}{space 1}   -1.28{col 46}{space 3}0.199{col 54}{space 4}-1.195699{col 67}{space 3} .2490361
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} .0913884{col 26}{space 2} .5182207{col 37}{space 1}    0.18{col 46}{space 3}0.860{col 54}{space 4}-.9243055{col 67}{space 3} 1.107082
+{txt}{space 4}interact {c |}{col 14}{res}{space 2}-.1060813{col 26}{space 2} .7086437{col 37}{space 1}   -0.15{col 46}{space 3}0.881{col 54}{space 4}-1.494997{col 67}{space 3} 1.282835
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.536773{col 26}{space 2} .6627779{col 37}{space 1}   -2.32{col 46}{space 3}0.020{col 54}{space 4}-2.835793{col 67}{space 3}-.2377518
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. logit TestWins3 MuslimPair CDD SmallFirm MediumFirm Secretary AssistantDirector AssistantAccountant test_photo interact, robust
+
+{res}{txt}Iteration 0:{space 3}log pseudolikelihood = {res:-110.70859}  
+Iteration 1:{space 3}log pseudolikelihood = {res:-102.45982}  
+Iteration 2:{space 3}log pseudolikelihood = {res:-101.89259}  
+Iteration 3:{space 3}log pseudolikelihood = {res:-101.89105}  
+Iteration 4:{space 3}log pseudolikelihood = {res:-101.89105}  
+{res}
+{txt}Logistic regression{col 51}Number of obs{col 67}= {res}       265
+{txt}{col 51}Wald chi2({res}9{txt}){col 67}= {res}     15.21
+{txt}{col 51}Prob > chi2{col 67}= {res}    0.0854
+{txt}Log pseudolikelihood = {res}-101.89105{txt}{col 51}Pseudo R2{col 67}= {res}    0.0796
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{col 14}{c |}{col 26}    Robust
+{col 1}   TestWins3{col 14}{c |}      Coef.{col 26}   Std. Err.{col 38}      z{col 46}   P>|z|{col 54}     [95% Con{col 67}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+{space 2}MuslimPair {c |}{col 14}{res}{space 2}-1.091904{col 26}{space 2} .4331635{col 37}{space 1}   -2.52{col 46}{space 3}0.012{col 54}{space 4}-1.940889{col 67}{space 3}-.2429195
+{txt}{space 9}CDD {c |}{col 14}{res}{space 2} .7326474{col 26}{space 2} .3873611{col 37}{space 1}    1.89{col 46}{space 3}0.059{col 54}{space 4}-.0265664{col 67}{space 3} 1.491861
+{txt}{space 3}SmallFirm {c |}{col 14}{res}{space 2}-.1252403{col 26}{space 2} .5887805{col 37}{space 1}   -0.21{col 46}{space 3}0.832{col 54}{space 4}-1.279229{col 67}{space 3} 1.028748
+{txt}{space 2}MediumFirm {c |}{col 14}{res}{space 2} .1196015{col 26}{space 2} .6240882{col 37}{space 1}    0.19{col 46}{space 3}0.848{col 54}{space 4}-1.103589{col 67}{space 3} 1.342792
+{txt}{space 3}Secretary {c |}{col 14}{res}{space 2} -.533694{col 26}{space 2}  .569277{col 37}{space 1}   -0.94{col 46}{space 3}0.349{col 54}{space 4}-1.649456{col 67}{space 3} .5820684
+{txt}AssistantD~r {c |}{col 14}{res}{space 2}-.7636704{col 26}{space 2} .5380293{col 37}{space 1}   -1.42{col 46}{space 3}0.156{col 54}{space 4}-1.818189{col 67}{space 3} .2908476
+{txt}AssistantA~t {c |}{col 14}{res}{space 2}-.0296423{col 26}{space 2} .4443539{col 37}{space 1}   -0.07{col 46}{space 3}0.947{col 54}{space 4}-.9005598{col 67}{space 3} .8412753
+{txt}{space 2}test_photo {c |}{col 14}{res}{space 2} -.201681{col 26}{space 2}  .589863{col 37}{space 1}   -0.34{col 46}{space 3}0.732{col 54}{space 4}-1.357791{col 67}{space 3} .9544292
+{txt}{space 4}interact {c |}{col 14}{res}{space 2}-.1029416{col 26}{space 2} 1.014972{col 37}{space 1}   -0.10{col 46}{space 3}0.919{col 54}{space 4}-2.092249{col 67}{space 3} 1.886366
+{txt}{space 7}_cons {c |}{col 14}{res}{space 2}-1.392725{col 26}{space 2} .6597512{col 37}{space 1}   -2.11{col 46}{space 3}0.035{col 54}{space 4}-2.685813{col 67}{space 3}-.0996359
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 9}{hline 8}{hline 13}{hline 12}
+
+{com}. 
+. 
+. log close
+      {txt}name:  {res}<unnamed>
+       {txt}log:  {res}/Users/claireadida/Desktop/France Documents/March 2009/Analysis/Experiments/CV/AnalysisDec2009.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}15 Oct 2010, 11:16:13
+{txt}{.-}
+{smcl}
+{txt}{sf}{ul off}

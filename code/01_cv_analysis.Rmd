@@ -1,0 +1,413 @@
+---
+title: "01_cv_analysis.Rmd"
+output: html_document
+date: "2026-02-23"
+---
+```{r setup, include=FALSE}
+source(here::here("code", "00_setup.R"))
+```
+
+
+##PART 1 — CV (RÉSUMÉ AUDIT) EXPERIMENT
+#  Original Stata file: 2009Dec17CLA_CV.do
+#   Design: matched pairs of CVs sent to employers.
+#    • "Test" candidate  = candidate 1 (Khadija or Marie)
+#    • "Control" candidate = candidate 2 (Aurélie)
+#    • MuslimPair = 1 when pair is Khadija vs Aurélie
+#    • ChristianPair = 1 when pair is Marie vs Aurélie
+
+#  Three codings of the outcome differ in what counts as "missing":
+# Coding 1 (ISM-Corum): drop NRNR, NRNo, NoNR, NoNo, ""
+# Coding 2: drop NRNR, NRNo, NoNR, "" (keep NoNo as 0)
+# Coding 3: drop only "" (invalid email tests)
+
+# ── 1a. Variable construction ────────────────────────────────────────────────
+# Stata generates binary indicators from string variables for pair type, position, contract, and firm size.  
+# To replicate this in R: case_when
+
+```{r}
+
+
+cv <- original_data %>%
+  mutate(
+    # --- normalize firm size ---
+    firm_size = firm_size %>%
+      as.character() %>%
+      str_replace_all("\u00A0", " ") %>%
+      str_squish() %>%
+      stri_replace_all_regex("\\p{Cc}", "") %>%   
+      stri_trans_general("Latin-ASCII") %>%
+      na_if(""),
+
+    # --- normalize position ---
+    position_clean = position %>%
+      as.character() %>%
+      str_replace_all("\u00A0", " ") %>%
+      str_squish() %>%
+      stri_replace_all_regex("\\p{Cc}", "") %>%   
+      stri_trans_general("Latin-ASCII") %>%
+      na_if(""),
+
+    # --- pull the position code (01/02/03/04) ---
+    position_code = str_extract(position_clean, "^\\d{2}"),
+
+    # Pair type
+    MuslimPair    = as.integer(str_detect(pair, "Khadija")),
+    ChristianPair = as.integer(str_detect(pair, "Marie")),
+
+    # Job position dummies 
+    Secretary           = as.integer(position_code == "01"),
+    AssistantDirector   = as.integer(position_code == "02"),
+    AssistantAccountant = as.integer(position_code == "03"),
+    Accountant          = as.integer(position_code == "04"),
+
+    # Contract type
+    CDD = as.integer(contract_type == "CDD"),
+    CDI = as.integer(contract_type == "CDI"),
+
+    # Firm size dummies
+    SmallFirm  = case_when(
+      is.na(firm_size) ~ NA_integer_,
+      str_starts(firm_size, "01_") ~ 1L,
+      TRUE ~ 0L
+    ),
+    MediumFirm = case_when(
+      is.na(firm_size) ~ NA_integer_,
+      str_starts(firm_size, "02_") ~ 1L,
+      TRUE ~ 0L
+    ),
+    LargeFirm  = case_when(
+      is.na(firm_size) ~ NA_integer_,
+      str_starts(firm_size, "03_") ~ 1L,
+      TRUE ~ 0L
+    )
+  )
+
+```
+
+
+# ── 1b. Merge corrected result variable ──────────────────────────────────────
+# Stata: joinby testnumber using NewAdidaCoding.dta
+# The corrected "newresult" variable fixes errors in the original "result".
+
+```{r}
+
+cv <- cv %>%
+  mutate(testnumber = str_trim(as.character(testnumber)))
+
+newcoding <- newcoding %>%
+  mutate(testnumber = str_trim(as.character(testnumber)))
+
+cvj <- left_join(cv, newcoding, by = "testnumber") %>%
+  mutate(newresult = str_trim(as.character(newresult)))
+
+
+```
+
+#── 1c. Helpers: pseudo-R2, robust logit, & tidy output ──────────────────────────────────
+# Stata: logit Y X, robust  →  uses Huber-White (HC0) standard errors.
+
+```{r}
+
+tidy_rlogit <- function(formula, data, model_name) {
+  mf <- model.frame(formula, data = data, na.action = na.omit) # exact estimation sample
+  fit <- glm(formula, data = mf, family = binomial(link = "logit"))
+  ct  <- lmtest::coeftest(fit, vcov. = sandwich::vcovHC(fit, type = "HC0"))
+
+  # Fit null model explicitly on the same sampled data
+  null_fit <- glm(update(formula, . ~ 1), data = mf, family = binomial(link = "logit"))
+
+  ll_full <- as.numeric(logLik(fit))
+  ll_null <- as.numeric(logLik(null_fit))
+  pseudo_r2 <- 1 - (ll_full / ll_null)
+
+  tibble::tibble(
+    model     = model_name,
+    nobs      = nobs(fit),
+    pseudo_r2 = pseudo_r2,
+    term      = rownames(ct),
+    estimate  = ct[, "Estimate"],
+    std.error = ct[, "Std. Error"],
+    statistic = ct[, "z value"],
+    p.value   = ct[, "Pr(>|z|)"]
+  )
+}
+
+```
+
+# ── 1d. Helper:  ───────────────────────────
+# Returns the data with ControlWins, TestWins, and the interact term.
+
+```{r}
+
+build_outcomes <- function(data, missing_values) {
+  data %>%
+    mutate(
+      ControlWins = case_when(
+        newresult %in% c("NRYes", "NoYes", "YesYes") ~ 1,
+        newresult %in% missing_values                 ~ NA_real_,
+        TRUE                                          ~ 0),
+      TestWins = case_when(
+        newresult %in% c("YesNR", "YesNo", "YesYes") ~ 1,
+        newresult %in% missing_values                 ~ NA_real_,
+        TRUE                                          ~ 0),
+      interact = MuslimPair * test_photo
+    )
+}
+
+```
+
+# ── 1e. Define the three codings ────────────────────────────────────────────
+
+```{r}
+
+coding_defs <- list(
+  C1 = c("", "NRNR", "NRNo", "NoNR", "NoNo"),   
+  C2 = c("", "NRNR", "NRNo", "NoNR"),            
+  C3 = c("")                                      
+)
+
+```
+
+# ── 1f. Run all analyses across the three codings ───────────────────────────
+# For each coding we produce:
+#   Summary statistics (overall, by MuslimPair, by ChristianPair)
+#   Welch t-tests (TestWins by MuslimPair; ControlWins by MuslimPair)
+#   10 logit models with robust SEs 
+
+```{r}
+
+for (cname in names(coding_defs)) {
+
+  d      <- build_outcomes(cvj, coding_defs[[cname]])
+  
+  # Drop rows with NA in test_photo before fitting any models!
+  d <- d %>% filter(!is.na(test_photo))
+  
+  suffix <- cname   
+
+  d      <- build_outcomes(cvj, coding_defs[[cname]])
+  suffix <- cname   
+
+  # Summary statistics
+stats <- list(
+  n    = ~ sum(!is.na(.)),
+  mean = ~ mean(., na.rm = TRUE),
+  sd   = ~ sd(., na.rm = TRUE)
+)
+
+overall <- d %>%
+  summarise(
+    across(c(TestWins, ControlWins), stats, .names = "{.col}_{.fn}")) %>%
+  mutate(pair = "All", .before = 1)
+
+by_pair <- bind_rows(
+  d %>% filter(MuslimPair    == 1) %>%
+    summarise(pair = "Muslim",    across(c(TestWins, ControlWins), stats, .names = "{.col}_{.fn}")),
+  d %>% filter(ChristianPair == 1) %>%
+    summarise(pair = "Christian", across(c(TestWins, ControlWins), stats, .names = "{.col}_{.fn}"))
+)
+
+cv_out[[paste0("summary_", suffix)]] <- bind_rows(overall, by_pair)
+
+  # ---- t-tests ----
+  # Stata: ttest TestWins, by(MuslimPair) unpaired unequal
+  # Stata: ttest ControlWins, by(MuslimPair) unpaired unequal
+  # Stata: ttest TestWins==ControlWins if ChristianPair==1, unpaired unequal
+  # Stata: ttest TestWins==ControlWins if MuslimPair==1, unpaired unequal
+
+  d_chr <- d %>% filter(ChristianPair == 1, !is.na(TestWins), !is.na(ControlWins))
+  d_mus <- d %>% filter(MuslimPair    == 1, !is.na(TestWins), !is.na(ControlWins))
+
+  tt <- bind_rows(
+    tidy(t.test(TestWins    ~ MuslimPair, data = d, var.equal = FALSE)) %>%
+      mutate(test = "TestWins by MuslimPair"),
+    tidy(t.test(ControlWins ~ MuslimPair, data = d, var.equal = FALSE)) %>%
+      mutate(test = "ControlWins by MuslimPair"),
+    tidy(t.test(d_chr$TestWins, d_chr$ControlWins, paired = FALSE, var.equal = FALSE)) %>%
+      mutate(test = "Test==Control | Christian"),
+    tidy(t.test(d_mus$TestWins, d_mus$ControlWins, paired = FALSE, var.equal = FALSE)) %>%
+      mutate(test = "Test==Control | Muslim")
+  )
+
+  cv_out[[paste0("ttests_", suffix)]] <- tt
+
+# ---- Logit models ----
+
+tidy_rlogit_m9_stata <- function(data, suffix) {
+
+  data <- data %>% mutate(interact = MuslimPair * test_photo)
+
+  f_full <- ControlWins ~ MuslimPair + CDD + SmallFirm + MediumFirm +
+    Secretary + AssistantDirector + AssistantAccountant + test_photo + interact
+
+  d_int <- data %>% filter(!is.na(interact), interact != 0, !is.na(ControlWins))
+  sep_hit <- nrow(d_int) > 0 && (all(d_int$ControlWins == 1) || all(d_int$ControlWins == 0))
+
+  # helper: McFadden pseudo-R2 on same estimation sample as fit
+  # null_fit should use exact same model.frame as fit
+  mcfadden_same_sample <- function(fit) {
+    # Extract the exact estimation sample used by fit (accounts for all NA dropping)
+    mf <- model.frame(fit)
+    # Fit null model on the same sample, not on original data
+    null_fit <- glm(update(formula(fit), . ~ 1), 
+                    data = mf, 
+                    family = binomial(link = "logit"))
+    
+    ll_full  <- as.numeric(stats::logLik(fit))
+    ll_null  <- as.numeric(stats::logLik(null_fit))
+    1 - (ll_full / ll_null)
+  }
+
+  if (sep_hit) {
+    # drop interact term & drop interact!=0 observations
+    d_fit <- data %>% filter(is.na(interact) | interact == 0)
+
+    f_drop <- ControlWins ~ MuslimPair + CDD + SmallFirm + MediumFirm +
+      Secretary + AssistantDirector + AssistantAccountant + test_photo
+
+    # Create model.frame first with all variables in formula
+    # Just to ensure both full and null models see identical sample
+    mf_fit <- model.frame(f_drop, data = d_fit, na.action = na.omit)
+    
+    fit <- suppressWarnings(glm(f_drop, 
+                                data = mf_fit, 
+                                family = binomial(link = "logit")))
+    ct  <- lmtest::coeftest(fit, vcov. = sandwich::vcovHC(fit, type = "HC0"))
+
+    # McFadden on same sample
+    pseudo_r2 <- mcfadden_same_sample(fit)
+
+    res <- tibble::tibble(
+      model     = paste0(suffix, "_m9_CW_interact"),
+      nobs      = stats::nobs(fit),
+      pseudo_r2 = pseudo_r2,
+      term      = rownames(ct),
+      estimate  = ct[, "Estimate"],
+      std.error = ct[, "Std. Error"],
+      statistic = ct[, "z value"],
+      p.value   = ct[, "Pr(>|z|)"],
+      note      = NA_character_
+    ) %>%
+      dplyr::bind_rows(
+        tibble::tibble(
+          model     = paste0(suffix, "_m9_CW_interact"),
+          nobs      = stats::nobs(fit),
+          pseudo_r2 = pseudo_r2,
+          term      = "interact",
+          estimate  = NA_real_, std.error = NA_real_,
+          statistic = NA_real_, p.value = NA_real_,
+          note      = "dropped: interact!=0 obs removed"
+        )
+      )
+
+    return(res)
+  }
+
+  # full model branch
+  
+  mf_fit <- model.frame(f_full, data = data, na.action = na.omit)
+  
+  fit <- suppressWarnings(glm(f_full, 
+                              data = mf_fit, 
+                              family = binomial(link = "logit")))
+  ct  <- lmtest::coeftest(fit, vcov. = sandwich::vcovHC(fit, type = "HC0"))
+
+  pseudo_r2 <- mcfadden_same_sample(fit)
+
+  tibble::tibble(
+    model     = paste0(suffix, "_m9_CW_interact"),
+    nobs      = stats::nobs(fit),
+    pseudo_r2 = pseudo_r2,
+    term      = rownames(ct),
+    estimate  = ct[, "Estimate"],
+    std.error = ct[, "Std. Error"],
+    statistic = ct[, "z value"],
+    p.value   = ct[, "Pr(>|z|)"],
+    note      = NA_character_
+  )
+}
+
+tidy_rlogit <- function(formula, data, model_name) {
+  mf <- model.frame(formula, data = data, na.action = na.omit)
+  # Fit full model on this controlled sample
+  fit <- glm(formula, data = mf, family = binomial(link = "logit"))
+  ct  <- lmtest::coeftest(fit, vcov. = sandwich::vcovHC(fit, type = "HC0"))
+  # Fit null model on the same sample (not on original data!)
+  null_fit <- glm(update(formula, . ~ 1), 
+                  data = mf, 
+                  family = binomial(link = "logit"))
+
+  # McFadden pseudo-R2: both LLs computed on same N
+  ll_full <- as.numeric(stats::logLik(fit))
+  ll_null <- as.numeric(stats::logLik(null_fit))
+  pseudo_r2 <- 1 - (ll_full / ll_null)
+
+  tibble::tibble(
+    model     = model_name,
+    nobs      = stats::nobs(fit),
+    pseudo_r2 = pseudo_r2,
+    term      = rownames(ct),
+    estimate  = ct[, "Estimate"],
+    std.error = ct[, "Std. Error"],
+    statistic = ct[, "z value"],
+    p.value   = ct[, "Pr(>|z|)"]
+  )
+}
+
+logit_results <- dplyr::bind_rows(
+
+  tidy_rlogit(ControlWins ~ MuslimPair + CDD + SmallFirm + MediumFirm,
+              d, paste0(suffix, "_m1_CW_base")),
+  tidy_rlogit(ControlWins ~ MuslimPair + CDD + SmallFirm + MediumFirm + test_photo,
+              d, paste0(suffix, "_m2_CW_photo")),
+
+  tidy_rlogit(TestWins ~ MuslimPair + CDD + SmallFirm + MediumFirm,
+              d, paste0(suffix, "_m3_TW_base")),
+  tidy_rlogit(TestWins ~ MuslimPair + CDD + SmallFirm + MediumFirm + test_photo,
+              d, paste0(suffix, "_m4_TW_photo")),
+
+  tidy_rlogit(ControlWins ~ MuslimPair + CDD + SmallFirm + MediumFirm +
+                Secretary + AssistantDirector + AssistantAccountant,
+              d, paste0(suffix, "_m5_CW_pos")),
+  tidy_rlogit(ControlWins ~ MuslimPair + CDD + SmallFirm + MediumFirm +
+                Secretary + AssistantDirector + AssistantAccountant + test_photo,
+              d, paste0(suffix, "_m6_CW_pos_photo")),
+
+  tidy_rlogit(TestWins ~ MuslimPair + CDD + SmallFirm + MediumFirm +
+                Secretary + AssistantDirector + AssistantAccountant,
+              d, paste0(suffix, "_m7_TW_pos")),
+  tidy_rlogit(TestWins ~ MuslimPair + CDD + SmallFirm + MediumFirm +
+                Secretary + AssistantDirector + AssistantAccountant + test_photo,
+              d, paste0(suffix, "_m8_TW_pos_photo")),
+
+  tidy_rlogit_m9_stata(d, suffix),
+
+  tidy_rlogit(TestWins ~ MuslimPair + CDD + SmallFirm + MediumFirm +
+                Secretary + AssistantDirector + AssistantAccountant +
+                test_photo + interact,
+              d, paste0(suffix, "_m10_TW_interact"))
+)
+
+cv_out[[paste0("logits_", suffix)]] <- logit_results
+
+cv_out[[paste0("logit_fit_", suffix)]] <- logit_results %>%
+  dplyr::distinct(model, nobs, pseudo_r2) %>%
+  dplyr::arrange(model)}
+
+```
+
+##Save results: 
+
+```{r}
+
+save_all_tables_from_list(
+  out_list = cv_out,
+  prefix   = "cv",
+  base_dir = dir_tables,
+  rows_per_page = 20,
+  width = 2400, height = 1600, res = 200, digits = 4
+)
+
+```
+

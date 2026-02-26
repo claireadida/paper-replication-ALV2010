@@ -1,0 +1,351 @@
+---
+title: "02_survey_analysis"
+output: html_document
+date: "2026-02-23"
+---
+
+```{r setup, include=FALSE}
+source(here::here("code", "00_setup.R"))
+```
+
+#PART 2 — SURVEY RESULTS 
+#  Original Stata file: SurveyDataForPNAS.do
+#  Three analyses:
+#    A. OLS regression of income on first-migrant education, self-reported
+#       religion, gender, age  (robust SEs)
+#    B. "Table 2" ordered probit (david_religion, with interaction)
+#    C. "Table A4" ordered probit + predicted probabilities for
+#       typical Muslim vs typical Christian
+
+# ── 2a. Variable construction ───────────────────────
+
+
+```{r}
+
+sv <- survey_data %>%
+  mutate(
+    # Gender: 0 = male, 1 = female (Stata recodes sexe 1→0, 2→1)
+    gender = case_when(sexe == 1 ~ 0L, sexe == 2 ~ 1L, TRUE ~ NA_integer_),
+    female = as.integer(gender == 1),
+    Age    = as.numeric(age1),
+
+    # Education of first migrant (99 = missing in Stata)
+    educ_firstmigrant = if_else(q15 == 99, NA_real_, as.numeric(q15)),
+
+    # Self-reported religion: 0 = Muslim, 1 = Christian
+    self_religion     = case_when(q53 == 1 ~ 0, q53 == 2 ~ 1, TRUE ~ NA_real_),
+
+    # Income (99 = missing)
+    income     = if_else(q95 == 99, NA_real_, as.numeric(q95)),
+    income_ord = ordered(if_else(q95 == 99, NA_integer_, as.integer(q95))),
+
+    # "david_religion": both family & self must agree
+    david_religion = case_when(
+      q7 == 1 & q53 == 1 ~ 0,
+      q7 == 2 & q53 == 2 ~ 1,
+      TRUE ~ NA_real_),
+
+    # Family religion
+    christianfamily = case_when(q7 == 2 ~ 1, q7 == 1 ~ 0, TRUE ~ NA_real_),
+
+    # Head-of-household gender
+    genderhead = case_when(
+      (q40 == "01" & female == 0) | q40 == "03" ~ 1,
+      (q40 == "01" & female == 1) | q40 == "04" ~ 0,
+      TRUE ~ NA_real_),
+
+    # Education variables
+    curreduc   = if_else(q43 < 99, as.numeric(q43), NA_real_),
+    educfather = if_else(q36 == 99, NA_real_, as.numeric(q36)),
+    educmother = if_else(q37 == 99, NA_real_, as.numeric(q37)),
+
+    # Education of household head
+    educhead = case_when(
+      q40 == "01" ~ curreduc,
+      q40 == "03" ~ educfather,
+      q40 == "04" ~ educmother,
+      TRUE ~ NA_real_),
+
+    initialeduc = if_else(q15 < 99, as.numeric(q15), NA_real_)
+  )
+
+#helper functions: 
+
+pseudo_r2_mcfadden_clm <- function(fit) {
+  # use same estimation sample
+  mf <- model.frame(fit)
+  y  <- all.vars(formula(fit))[1]
+  null_form <- stats::as.formula(paste0(y, " ~ 1"))
+  null_fit  <- ordinal::clm(null_form, data = mf, link = "probit")
+
+  1 - as.numeric(logLik(fit)) / as.numeric(logLik(null_fit))
+}
+
+# Robust SEs for ordinal::clm 
+vcov_robust_clm_stata <- function(fit) {
+  # Score contributions (n x k)
+  S <- as.matrix(sandwich::estfun(fit))
+
+  # Hessian of the log-likelihood (k x k)
+  H <- fit$Hessian
+
+  B <- solve(H)
+  meat <- crossprod(S)
+  V <- B %*% meat %*% B
+  V
+}
+
+tidy_robust_clm_stata <- function(fit, model_name) {
+  V  <- vcov_robust_clm_stata(fit)
+  ct <- lmtest::coeftest(fit, vcov. = V)
+
+  tibble::tibble(
+    model     = model_name,
+    term      = rownames(ct),
+    estimate  = ct[, 1],
+    std.error = ct[, 2],
+    statistic = ct[, 3],
+    p.value   = ct[, 4]
+  )
+}
+
+```
+
+# ── 2b. OUTPUT A: OLS regression ────────────────────────────────────────────
+# Stata: reg income educ_firstmigrant self_religion gender Age, robust
+
+```{r}
+
+m_ols      <- lm(income ~ educ_firstmigrant + self_religion + gender + Age, data = sv)
+ols_robust <- tidy(coeftest(m_ols, vcov. = vcovHC(m_ols, type = "HC0")))
+sv_out[["OLS_robust"]] <- ols_robust
+
+sv_out[["OLS_summary_stats"]] <- sv %>%
+  summarise(across(c(income, educ_firstmigrant, self_religion, gender, Age),
+                   list(n    = ~ sum(!is.na(.)),
+                        mean = ~ mean(., na.rm = TRUE),
+                        sd   = ~ sd(., na.rm = TRUE)),
+                   .names = "{.col}_{.fn}"))
+
+ols_fit_stats <- tibble(
+  model      = "OLS_robust",
+  n_obs      = nobs(m_ols),
+  r2         = summary(m_ols)$r.squared,
+  adj_r2     = summary(m_ols)$adj.r.squared
+)
+
+sv_out[["OLS_robust"]] <- tidy(coeftest(m_ols, vcov. = vcovHC(m_ols, type = "HC0"))) %>%
+  mutate(n_obs = nobs(m_ols))
+
+```
+
+# ── 2c. OUTPUT B: Table 2 — Ordered probit (david_religion) ─────────────────
+# Stata:
+#   oprobit q95 q15 gender age1 david_religion if q95~=99 & q15~=99, robust
+#   gen interaction = david_religion * q15
+#   oprobit q95 q15 gender age1 david_religion interaction if …, robust
+
+```{r}
+
+sv_t2 <- sv %>%
+  dplyr::filter(!is.na(income_ord), !is.na(educ_firstmigrant)) %>%
+  dplyr::mutate(interaction = david_religion * educ_firstmigrant)
+
+op1 <- ordinal::clm(
+  income_ord ~ educ_firstmigrant + gender + Age + david_religion,
+  data = sv_t2, link = "probit"
+)
+
+op2 <- ordinal::clm(
+  income_ord ~ educ_firstmigrant + gender + Age + david_religion + interaction,
+  data = sv_t2, link = "probit"
+)
+
+# robust coefficient tables
+sv_out[["Table2_oprobit_robust"]] <- dplyr::bind_rows(
+  tidy_robust_clm(op1, "Table2_col1"),
+  tidy_robust_clm(op2, "Table2_col2_interaction")
+)
+
+# fit stats (N + McFadden pseudo-R2)
+sv_out[["Table2_fit_stats"]] <- dplyr::bind_rows(
+  tibble::tibble(
+    model = "Table2_col1",
+    n_obs = stats::nobs(op1),
+    pseudo_r2_mcfadden = pseudo_r2_mcfadden_clm(op1)
+  ),
+  tibble::tibble(
+    model = "Table2_col2_interaction",
+    n_obs = stats::nobs(op2),
+    pseudo_r2_mcfadden = pseudo_r2_mcfadden_clm(op2)
+  )
+)
+
+
+```
+
+# ── 2d. OUTPUT C: Table A4 — Ordered probit + predicted probabilities ────────
+# Stata restricts to head-of-household respondents (q40 in {01, 03, 04}) and estimates: oprobit income christianfamily genderhead educhead initialeduc, robust
+# Then computes predicted probabilities for:
+#   (i)   typical Muslim vs. Christian by group-specific modes
+#   (ii)  typical person (overall modes), varying only religion
+#   (iii) typical person within ±0.5 SD of each covariate mean
+
+```{r}
+
+svA4 <- sv %>%
+  filter(q40 %in% c("01", "03", "04")) %>%
+  filter(!is.na(income), !is.na(christianfamily),
+         !is.na(genderhead), !is.na(educhead), !is.na(initialeduc)) %>%
+  mutate(income_ord = ordered(income))
+
+opA4 <- polr(income_ord ~ christianfamily + genderhead + educhead + initialeduc,
+             data = svA4, method = "probit", Hess = TRUE)
+
+sv_out[["TableA4_oprobit"]] <- broom::tidy(opA4)
+sv_out[["TableA4_fit_stats"]] <- tibble::tibble(
+  model = "TableA4",
+  n_obs = nobs(opA4),
+  pseudo_r2_mcfadden = pseudo_r2_mcfadden(opA4)
+)
+
+
+# Predicted probabilities
+pmat  <- predict(opA4, newdata = svA4, type = "probs")
+pcols <- paste0("p", seq_len(ncol(pmat)))
+svA4p <- bind_cols(svA4, as.data.frame(pmat) %>% setNames(pcols))
+
+# Helper: statistical mode
+Mode <- function(x) {
+  x  <- x[!is.na(x)]
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+# Helper: mean predicted probs for a subset
+mean_probs <- function(df, label) {
+  df %>%
+    summarise(across(all_of(pcols), ~ mean(., na.rm = TRUE)), n = n()) %>%
+    mutate(group = label, .before = 1)
+}
+
+# (i) Group-specific modes
+modes_mus <- svA4p %>% filter(christianfamily == 0) %>%
+  summarise(across(c(genderhead, educhead, initialeduc), Mode))
+modes_chr <- svA4p %>% filter(christianfamily == 1) %>%
+  summarise(across(c(genderhead, educhead, initialeduc), Mode))
+
+pp_groupmode <- bind_rows(
+  svA4p %>%
+    filter(christianfamily == 0,
+           genderhead  == modes_mus$genderhead,
+           educhead    == modes_mus$educhead,
+           initialeduc == modes_mus$initialeduc) %>%
+    mean_probs("Muslim (group mode)"),
+  svA4p %>%
+    filter(christianfamily == 1,
+           genderhead  == modes_chr$genderhead,
+           educhead    == modes_chr$educhead,
+           initialeduc == modes_chr$initialeduc) %>%
+    mean_probs("Christian (group mode)")
+)
+
+# (ii) Overall modes, varying only religion
+modes_all <- svA4p %>%
+  summarise(across(c(genderhead, educhead, initialeduc), Mode))
+
+pp_overallmode <- bind_rows(
+  svA4p %>%
+    filter(christianfamily == 0,
+           genderhead  == modes_all$genderhead,
+           educhead    == modes_all$educhead,
+           initialeduc == modes_all$initialeduc) %>%
+    mean_probs("Muslim (overall mode)"),
+  svA4p %>%
+    filter(christianfamily == 1,
+           genderhead  == modes_all$genderhead,
+           educhead    == modes_all$educhead,
+           initialeduc == modes_all$initialeduc) %>%
+    mean_probs("Christian (overall mode)")
+)
+
+# (iii) Mean ± 0.5 SD bands (overall)
+band_filter <- function(df, ref_df = df) {
+  stats <- ref_df %>%
+    summarise(
+      educhead_m    = mean(educhead, na.rm = TRUE),
+      educhead_s    = sd(educhead, na.rm = TRUE),
+      initialeduc_m = mean(initialeduc, na.rm = TRUE),
+      initialeduc_s = sd(initialeduc, na.rm = TRUE)
+    )
+
+  df %>%
+    filter(
+      between(educhead,
+              stats$educhead_m    - 0.5 * stats$educhead_s,
+              stats$educhead_m    + 0.5 * stats$educhead_s),
+      between(initialeduc,
+              stats$initialeduc_m - 0.5 * stats$initialeduc_s,
+              stats$initialeduc_m + 0.5 * stats$initialeduc_s)
+    )
+}
+
+pp_band <- bind_rows(
+  svA4p %>% filter(christianfamily == 0) %>% band_filter() %>% mean_probs("Muslim (±0.5 SD, group)"),
+  svA4p %>% filter(christianfamily == 1) %>% band_filter() %>% mean_probs("Christian (±0.5 SD, group)")
+)
+
+pp_band_overall <- band_filter(svA4p, svA4p) %>%
+  dplyr::group_by(christianfamily) %>%
+  dplyr::summarise(dplyr::across(all_of(pcols), ~ mean(.x, na.rm = TRUE)),
+                   n = dplyr::n(),
+                   .groups = "drop") %>%
+  dplyr::mutate(group = dplyr::if_else(christianfamily == 1,
+                                      "Christian (±0.5 SD, overall)",
+                                      "Muslim (±0.5 SD, overall)")) %>%
+  dplyr::select(group, dplyr::everything(), -christianfamily)
+
+sv_out[["TableA4_predprob_groupmode"]]    <- pp_groupmode
+sv_out[["TableA4_predprob_overallmode"]]  <- pp_overallmode
+sv_out[["TableA4_predprob_band_group"]]   <- pp_band
+sv_out[["TableA4_predprob_band_overall"]] <- pp_band_overall
+
+a4_fit_stats <- tibble(
+  model = "TableA4",
+  n_obs = nobs(opA4),
+  logLik = as.numeric(logLik(opA4)),
+  pseudo_r2_mcfadden = pseudo_r2_mcfadden(opA4)
+)
+
+svA4 <- sv %>%
+  dplyr::filter(q40 %in% c("01", "03", "04")) %>%
+  dplyr::filter(!is.na(income), !is.na(christianfamily),
+                !is.na(genderhead), !is.na(educhead), !is.na(initialeduc)) %>%
+  dplyr::mutate(income_ord = ordered(income))
+
+opA4 <- ordinal::clm(
+  income_ord ~ christianfamily + genderhead + educhead + initialeduc,
+  data = svA4, link = "probit"
+)
+
+sv_out[["TableA4_oprobit_robust"]] <- tidy_robust_clm_stata(opA4, "TableA4")
+
+```
+
+#Save results: 
+
+```{r}
+save_all_tables_from_list(
+  out_list = sv_out,
+  prefix = "sv",
+  base_dir = dir_tables,   
+  rows_per_page = 20,
+  width = 2400,
+  height = 1600,
+  res = 200,
+  digits = 4
+)
+
+sv_out <- sv_out[sort(names(sv_out))]
+
+```
